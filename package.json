@@ -1,13 +1,27 @@
 {
   "name": "act-js",
-  "version": "1.0.0",
-  "description": "Wrapper to install act as an npm package. Installs act as act-js in node_modules",
+  "version": "0.0.1",
+  "description": "Wrapper to install act as an npm package",
   "main": "bin/act-js",
   "files": [
     "bin"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shubhbapna/act-js.git"
+  },
+  "homepage": "https://github.com/shubhbapna/act-js#readme",
+  "bugs": {
+    "url": "https://github.com/shubhbapna/act-js/issues"
+  },
+  "keywords": [
+    "github",
+    "github actions",
+    "act",
+    "nektos/act"
+  ],
   "scripts": {
-    "build": "./act.sh"
+    "build": "./act.sh $npm_package_version"
   },
   "author": "sbapna@redhat.com",
   "license": "ISC"
