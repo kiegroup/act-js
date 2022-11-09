@@ -29,3 +29,7 @@ act-js --version
 ```
 
 For detailed usage on how you can use `act-js` please refer to [nektos/act](https://github.com/nektos/act)
+
+## Version
+
+Each version of `act-js` corresponds to the same version of `nektos/act`

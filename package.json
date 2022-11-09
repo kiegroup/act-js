@@ -21,8 +21,13 @@
     "nektos/act"
   ],
   "scripts": {
-    "build": "./act.sh $npm_package_version"
+    "build": "./act.sh $npm_package_version",
+    "update": "node scripts/update.js"
   },
   "author": "sbapna@redhat.com",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@octokit/rest": "^19.0.5",
+    "prettier": "^2.7.1"
+  }
 }
