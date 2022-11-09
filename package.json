@@ -1,0 +1,14 @@
+{
+  "name": "act-js",
+  "version": "1.0.0",
+  "description": "Wrapper to install act as an npm package. Installs act as act-js in node_modules",
+  "main": "bin/act-js",
+  "files": [
+    "bin"
+  ],
+  "scripts": {
+    "build": "./act.sh"
+  },
+  "author": "sbapna@redhat.com",
+  "license": "ISC"
+}
