@@ -4,9 +4,7 @@ const path = require("path");
 const prettier = require("prettier");
 
 async function getNewReleases(currentRelease) {
-  const octokit = new Octokit({
-    auth: process.env.GITHUB_TOKEN,
-  });
+  const octokit = new Octokit();
 
   const newReleases = [];
 
