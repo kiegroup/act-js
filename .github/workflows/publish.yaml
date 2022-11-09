@@ -1,5 +1,11 @@
-name: Update
-on: workflow_dispatch
+name: Publish
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+
 jobs:
   update_act:
     runs-on: ubuntu-latest
@@ -10,4 +16,6 @@ jobs:
           node-version: 16
           cache: npm
       - run: npm run build
-# add publish steps
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
