@@ -1,6 +1,6 @@
 {
   "name": "@kie/act-js",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Wrapper to install act as an npm package",
   "main": "bin/act-js",
   "bin": {
