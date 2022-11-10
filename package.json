@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "description": "Wrapper to install act as an npm package",
   "main": "bin/act-js",
+  "bin": {
+    "act-js": "bin/act"
+  },
   "files": [
     "bin"
   ],

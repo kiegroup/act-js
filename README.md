@@ -14,6 +14,11 @@ If you are using Linux, you will need to [install Docker Engine](https://docs.do
 
 `act-js` is currently not supported with podman or other container backends (it might work, but it's not guaranteed). Please see [nektos/act #303](https://github.com/nektos/act/issues/303) for updates.
 
+## Configuration
+
+In you first run with `act-js` you will have to configure it.
+Please refer to [nektos/act configuration](https://github.com/nektos/act/#configuration)
+
 ## Usage
 
 Use locally with npm scripts
