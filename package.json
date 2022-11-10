@@ -1,6 +1,6 @@
 {
-  "name": "act-js",
-  "version": "0.0.0",
+  "name": "@kie/act-js",
+  "version": "0.0.1",
   "description": "Wrapper to install act as an npm package",
   "main": "bin/act-js",
   "bin": {
@@ -11,11 +11,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/shubhbapna/act-js.git"
+    "url": "https://github.com/kiegroup/act-js.git"
   },
-  "homepage": "https://github.com/shubhbapna/act-js#readme",
+  "homepage": "https://github.com/kiegroup/act-js#readme",
   "bugs": {
-    "url": "https://github.com/shubhbapna/act-js/issues"
+    "url": "https://github.com/kiegroup/act-js/issues"
   },
   "keywords": [
     "github",
@@ -27,8 +27,8 @@
     "build": "./act.sh $npm_package_version",
     "update": "node scripts/update.js"
   },
-  "author": "sbapna@redhat.com",
-  "license": "ISC",
+  "author": "Shubh Bapna <sbapna@redhat.com>",
+  "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "@octokit/rest": "^19.0.5",
     "prettier": "^2.7.1"
