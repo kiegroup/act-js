@@ -19,6 +19,11 @@ jobs:
       
       - name: Install packages
         run: npm ci
+
+      - name: Install act
+        run: ./script/act.sh $VERSION
+        env:
+          VERSION: 0.2.33
       
       - name: Test
         run: npm test
