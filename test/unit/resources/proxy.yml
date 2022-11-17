@@ -1,0 +1,15 @@
+name: Mocked apis
+
+on: push
+
+jobs:
+  mock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: api call
+        run: |
+          result=$(curl -s http://google.com)
+          echo "$result"
+
+
+
