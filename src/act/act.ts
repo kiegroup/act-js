@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import { RunOpts, Step, Workflow } from "@aj/act/act.type";
-import { DEFAULT_JOB, ACT_BINARY } from "@aj/act/act.constants";
+import { DEFAULT_JOB } from "@aj/act/act.constants";
 import { existsSync, writeFileSync } from "fs";
 import path from "path";
 import { homedir } from "os";
@@ -123,7 +123,7 @@ export class Act {
   private act(cwd: string, ...args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       // do not use spawnSync. will cause a deadlock when used with proxy settings
-      const childProcess = spawn(ACT_BINARY, ["-W", cwd, ...args], { cwd });
+      const childProcess = spawn("npx", ["act-js", "-W", cwd, ...args], { cwd });
       let data = "";
       let error = "";
       childProcess.stdout.on("data", (chunk) => {
