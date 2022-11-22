@@ -3,18 +3,23 @@ import express from "express";
 import http from "http";
 import { ResponseMocker } from "@aj/act.type";
 import { networkInterfaces } from "os";
+import internal from "stream";
 
 export class ForwardProxy {
   private apis: ResponseMocker[];
   private app: express.Express;
   private server: http.Server;
   private logger: (msg: string) => void;
+  private currentConnections: Record<number, internal.Duplex>;
+  private currentSocketId: number;
 
   constructor(apis: ResponseMocker[], verbose: boolean = false) {
     this.apis = apis;
     this.app = express();
     this.logger = verbose ? console.log : (_msg) => undefined;
     this.server = http.createServer(this.app);
+    this.currentConnections = {};
+    this.currentSocketId = 0;
   }
 
   /**
@@ -54,10 +59,13 @@ export class ForwardProxy {
         this.server.close((err) => {
           if (err) {
             reject(err);
-          } else {
-            resolve();
           }
         });
+
+        Object.values(this.currentConnections).forEach((socket) =>
+          socket.destroy()
+        );
+        resolve();
       }
     });
   }
@@ -85,6 +93,15 @@ export class ForwardProxy {
   private initServer() {
     // this context is lost in callbacks
     const logger = this.logger;
+
+    // keep track of connected sockets for clean up
+    this.server.on("connection", (socket) => {
+      const socketId = this.currentSocketId;
+      socket.on("close", () => {
+        delete this.currentConnections[socketId];
+      });
+      this.currentSocketId += 1;
+    });
 
     // forward any https connections intiated via CONNECT as is
     this.server.on("connect", (req, socket) => {
