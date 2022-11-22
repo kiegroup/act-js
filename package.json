@@ -5,10 +5,10 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "bin": {
-    "act-js": "bin/act"
+    "act-js": "build/bin/act"
   },
   "files": [
-    "bin",
+    "build/bin",
     "build/src"
   ],
   "repository": {
@@ -27,6 +27,7 @@
   ],
   "scripts": {
     "build": "tsc && tsc-alias",
+    "postbuild": "cp -r ./bin ./build",
     "test": "jest unit/",
     "test:report": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
     "test:ci": "jest ci/",
