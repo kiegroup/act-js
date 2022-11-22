@@ -1,0 +1,17 @@
+name: Step
+
+on: push
+
+jobs:
+  name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Name
+        id: echo
+        run: echo "pull request"
+      - name: secrets
+        run: echo $TEST1
+        env:
+          TEST1: ${{ secrets.SECRET1 }}
+      - uses: actions/checkout@v3
+      - run: echo run

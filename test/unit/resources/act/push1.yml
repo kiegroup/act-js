@@ -1,7 +1,5 @@
 name: Act Push Test 1
-
 on: push
-
 jobs:
   push1:
     runs-on: ubuntu-latest
@@ -17,4 +15,3 @@ jobs:
         run: echo "pass"
       - name: fail
         run: echo "fail" && exit 1
-

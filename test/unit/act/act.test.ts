@@ -1,8 +1,9 @@
 import path from "path";
-import { Act } from "@aj/act";
+import { Act } from "@aj/act/act";
 import { Mockapi } from "@kie/mock-github";
+import { readFileSync, writeFileSync } from "fs";
 
-const resources = path.resolve(__dirname, "resources");
+const resources = path.resolve(__dirname, "..", "resources", "act");
 
 describe("cwd", () => {
   test("set", () => {
@@ -64,25 +65,24 @@ describe("run", () => {
       .setEnv("ENV1", "env")
       .runJob("push1", { cwd: resources });
 
-    // act seems to behave a bit differently in different env - In GHA, name has a prefix Main
     expect(output).toMatchObject([
       {
-        name: expect.stringMatching(/echo "push 1"/),
+        name: 'Main echo "push 1"',
         status: 0,
         output: "push 1",
       },
       {
-        name: expect.stringMatching(/secrets/),
+        name: "Main secrets",
         output: "***",
         status: 0,
       },
       {
-        name: expect.stringMatching(/env/),
+        name: "Main env",
         output: "env",
         status: 0,
       },
-      { name: expect.stringMatching(/pass/), status: 0, output: "pass" },
-      { name: expect.stringMatching(/fail/), status: 1, output: "fail" },
+      { name: "Main pass", status: 0, output: "pass" },
+      { name: "Main fail", status: 1, output: "fail" },
     ]);
   });
 
@@ -92,25 +92,25 @@ describe("run", () => {
       .setSecret("SECRET1", "secret1")
       .setEnv("ENV1", "env")
       .runEvent("pull_request", { cwd: resources });
-    // act seems to behave a bit differently in different env - In GHA, name has a prefix Main
+
     expect(output).toStrictEqual([
       {
-        name: expect.stringMatching(/echo "pull request"/),
+        name: 'Main echo "pull request"',
         status: 0,
         output: "pull request",
       },
       {
-        name: expect.stringMatching(/secrets/),
+        name: "Main secrets",
         output: "***",
         status: 0,
       },
       {
-        name: expect.stringMatching(/env/),
+        name: "Main env",
         output: "env",
         status: 0,
       },
-      { name: expect.stringMatching(/pass/), status: 0, output: "pass" },
-      { name: expect.stringMatching(/fail/), status: 1, output: "fail" },
+      { name: "Main pass", status: 0, output: "pass" },
+      { name: "Main fail", status: 1, output: "fail" },
     ]);
   });
 
@@ -143,13 +143,98 @@ describe("run", () => {
           .setResponse({ status: 200, data: "mock response" }),
       ],
     });
-    // act seems to behave a bit differently in different env - In GHA, name has a prefix Main
     expect(output).toStrictEqual([
       {
-        name: expect.stringMatching(/api call/),
+        name: "Main https api call",
+        status: 0,
+        output: expect.stringMatching(/<HTML><HEAD>.+/),
+      },
+      {
+        name: "Main http api call",
         status: 0,
         output: "mock response",
-      }
+      },
     ]);
+  });
+
+  test("run job with mocked step", async () => {
+    const original = readFileSync(path.join(resources, "push1.yml"), "utf8");
+    const act = new Act(resources);
+    const output = await act.runJob("push1", {
+      mockSteps: {
+        push1: [
+          {
+            name: "secrets",
+            mockWith: "echo secrets",
+          },
+          {
+            run: "echo $ENV1",
+            mockWith: "echo some env",
+          },
+        ],
+      },
+    });
+    expect(output).toMatchObject([
+      {
+        name: 'Main echo "push 1"',
+        status: 0,
+        output: "push 1",
+      },
+      {
+        name: "Main secrets",
+        output: "secrets",
+        status: 0,
+      },
+      {
+        name: "Main env",
+        output: "some env",
+        status: 0,
+      },
+      { name: "Main pass", status: 0, output: "pass" },
+      { name: "Main fail", status: 1, output: "fail" },
+    ]);
+    writeFileSync(path.join(resources, "push1.yml"), original);
+  });
+
+  test("run event with mocked step", async () => {
+    const original = readFileSync(
+      path.join(resources, "pull_request.yml"),
+      "utf8"
+    );
+    const act = new Act(resources);
+    const output = await act.runEvent("pull_request", {
+      mockSteps: {
+        pr: [
+          {
+            name: "secrets",
+            mockWith: "echo secrets",
+          },
+          {
+            run: "echo $ENV1",
+            mockWith: "echo some env",
+          },
+        ],
+      },
+    });
+    expect(output).toStrictEqual([
+      {
+        name: 'Main echo "pull request"',
+        status: 0,
+        output: "pull request",
+      },
+      {
+        name: "Main secrets",
+        output: "secrets",
+        status: 0,
+      },
+      {
+        name: "Main env",
+        output: "some env",
+        status: 0,
+      },
+      { name: "Main pass", status: 0, output: "pass" },
+      { name: "Main fail", status: 1, output: "fail" },
+    ]);
+    writeFileSync(path.join(resources, "pull_request.yml"), original);
   });
 });

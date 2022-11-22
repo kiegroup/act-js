@@ -6,7 +6,11 @@ jobs:
   mock:
     runs-on: ubuntu-latest
     steps:
-      - name: api call
+      - name: https api call
+        run: |
+          result=$(curl -s https://google.com)
+          echo "$result"
+      - name: http api call
         run: |
           result=$(curl -s http://google.com)
           echo "$result"
