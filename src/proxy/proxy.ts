@@ -1,7 +1,7 @@
 import net from "net";
 import express from "express";
 import http from "http";
-import { ResponseMocker } from "@aj/act.type";
+import { ResponseMocker } from "@aj/proxy/proxy.types";
 import { networkInterfaces } from "os";
 import internal from "stream";
 
