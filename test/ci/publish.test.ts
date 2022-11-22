@@ -1,4 +1,4 @@
-import { Act } from "@aj/act";
+import { Act } from "@aj/act/act";
 import { MockGithub } from "@kie/mock-github";
 import path from "path";
 
@@ -25,17 +25,13 @@ beforeEach(async () => {
             dest: "tsconfig.json",
           },
           {
-            src: path.resolve(__dirname, "..", "..", "test"),
-            dest: "test",
-          },
-          {
             src: path.resolve(__dirname, "..", "..", "src"),
             dest: "src",
           },
           {
             src: path.resolve(__dirname, "..", "..", "scripts"),
             dest: "scripts",
-          }
+          },
         ],
       },
     },
@@ -48,25 +44,54 @@ afterEach(async () => {
 });
 
 test("publish workflow", async () => {
-
   const act = new Act(github.repo.getPath("actJS"));
-  const result = await act.setEnv("NPM_TOKEN", "fake_token").runJob("build");
+  const result = await act.setSecret("NPM_TOKEN", "fake_token").runJob("build", {
+    mockSteps: {
+      build: [
+        {
+          run: "npm publish --access public",
+          mockWith:
+            "echo Making sure that npm token is set - $NODE_AUTH_TOKEN",
+        },
+      ],
+    },
+  });
 
   expect(result).toMatchObject([
     {
-      name: expect.stringMatching(/actions\/checkout@v3/),
+      name: "Main actions/checkout@v3",
       status: 0,
       output: "",
     },
     {
-      name: expect.stringMatching(/actions\/setup-node@v3/),
+      name: "Main actions/setup-node@v3",
       output: expect.any(String),
       status: 0,
     },
-    { name: expect.stringMatching(/npm install/), status: 0, output: expect.any(String) },
-    { name: expect.stringMatching(/npm run build/), status: 0, output: expect.stringMatching(/tsc && tsc-alias/) },
-    { name: expect.stringMatching(/\.\/scripts\/act\.sh \$VERSION/), status: 0, output: expect.any(String) },
-    { name: expect.stringMatching(/npm publish --access public/), status: 1, output: expect.any(String) },
-
+    {
+      name: "Main npm install",
+      status: 0,
+      output: expect.any(String),
+    },
+    {
+      name: "Main npm run build",
+      status: 0,
+      output: expect.stringMatching(/tsc && tsc-alias/),
+    },
+    {
+      name: "Main ./scripts/act.sh $VERSION",
+      status: 0,
+      output: expect.any(String),
+    },
+    {
+      name: "Main echo Making sure that npm token is set - $NODE_AUTH_TOKEN",
+      status: 0,
+      output: "Making sure that npm token is set - ***",
+    },
+    {
+      name: "Post actions/setup-node@v3",
+      output: "",
+      status: 0,
+    },
   ]);
 });
