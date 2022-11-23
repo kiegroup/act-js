@@ -18,6 +18,6 @@ const jestConfig: Config.InitialOptions = {
   ],
   testLocationInResults: true,
   testResultsProcessor: "jest-sonar-reporter",
-  testTimeout: 50000,
+  testTimeout: 100000,
 };
 export default jestConfig;

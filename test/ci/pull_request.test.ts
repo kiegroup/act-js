@@ -6,7 +6,7 @@ let github: MockGithub;
 beforeEach(async () => {
   github = new MockGithub({
     repo: {
-      actJS_pull: {
+      pull_request: {
         files: [
           {
             src: path.resolve(__dirname, "..", "..", ".github"),
@@ -53,7 +53,7 @@ afterEach(async () => {
 
 test("pull request workflow", async () => {
 
-  const act = new Act(github.repo.getPath("actJS_pull"));
+  const act = new Act(github.repo.getPath("pull_request"));
   const result = await act.runJob("tests", {
     mockSteps: {
       tests: [

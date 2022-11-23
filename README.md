@@ -18,6 +18,7 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
     - [Mocking apis during the run](#mocking-apis-during-the-run)
     - [Mocking steps](#mocking-steps)
     - [Run result](#run-result)
+- [Example with Mock Github](#example-with-mock-github)
 - [Limitations](#limitations)
 - [Version](#version)
 
@@ -336,6 +337,13 @@ Each run returns an array of `Step` objects that describes what was executed, wh
   },
 ];
 ```
+
+## Example with Mock Github
+
+You can use this library along with [mock-github](https://github.com/kiegroup/mock-github) to test your workflow files as well as your custom actions.
+Here are some [examples](https://github.com/shubhbapna/mock-github-act-js-examples) on how to do so.
+
+You can also take look at how the workflow files are being tested in this repository - [ci-check.yaml](.github/workflows/ci-checks.yaml)
 
 ## Limitations
 

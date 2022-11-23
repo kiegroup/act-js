@@ -1,6 +1,15 @@
 name: Pull Request Checks
 
-on: pull_request
+on: 
+  pull_request:
+    paths-ignore:
+      - 'LICENSE'
+      - '.gitignore'
+      - '**.md'
+      - '.github/workflows/**'
+      - 'test/ci/**'
+      - '**.json'
+      - 'jest.config.ts'
 
 jobs:
   tests:
