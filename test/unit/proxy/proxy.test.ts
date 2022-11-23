@@ -159,7 +159,7 @@ describe("https", () => {
     await proxy.stop();
   });
 
-  test("some clients dont send a CONNECT request in which case don't mock it", async () => {
+  test("some clients dont send a CONNECT request in which case mock it", async () => {
     const moctokit = new Moctokit();
 
     const proxy = new ForwardProxy([
