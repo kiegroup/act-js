@@ -7,6 +7,7 @@ on:
       - '.gitignore'
       - '**.md'
       - '.github/workflows/**'
+      - 'test/ci/**'
 
 jobs:
   tests:

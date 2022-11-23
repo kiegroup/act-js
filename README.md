@@ -343,6 +343,8 @@ Each run returns an array of `Step` objects that describes what was executed, wh
 You can use this library along with [mock-github](https://github.com/kiegroup/mock-github) to test your workflow files as well as your custom actions.
 Here are some [examples](https://github.com/shubhbapna/mock-github-act-js-examples) on how to do so.
 
+You can also take look at how the workflow files are being tested in this repository - [ci-check.yaml](.github/workflows/ci-checks.yaml)
+
 ## Limitations
 
 Any limitations of `nektos/act` apply here as well.
