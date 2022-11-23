@@ -18,6 +18,7 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
     - [Mocking apis during the run](#mocking-apis-during-the-run)
     - [Mocking steps](#mocking-steps)
     - [Run result](#run-result)
+- [Limitations](#limitations)
 - [Version](#version)
 
 ## Prerequistes
@@ -59,7 +60,7 @@ For detailed usage on how you can use `act-js` please refer to [nektos/act](http
 
 ## API Usage
 
-Provides an interface for the [nektos/act](https://github.com/nektos/act/) tool to execute it programmatically.
+Provides an interface for the [nektos/act](https://github.com/nektos/act/) tool to execute it programmatically. By default it uses the `act` executable that comes with the package. However, if you want to use a different executable you can do so by setting the env variable `ACT_BINARY` to point to the location of the executable you want to use. 
 
 ### Current working directory
 
@@ -335,6 +336,11 @@ Each run returns an array of `Step` objects that describes what was executed, wh
   },
 ];
 ```
+
+## Limitations
+
+Any limitations of `nektos/act` apply here as well.
+
 
 ## Version
 
