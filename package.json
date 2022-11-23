@@ -30,7 +30,7 @@
     "postbuild": "cp -r ./bin ./build",
     "test": "jest unit/",
     "test:report": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
-    "test:ci": "jest ci/",
+    "test:ci": "jest --runInBand ci/",
     "file": "ts-node-esm"
   },
   "author": "Shubh Bapna <sbapna@redhat.com>",

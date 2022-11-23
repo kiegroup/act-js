@@ -6,7 +6,7 @@ let github: MockGithub;
 beforeEach(async () => {
   github = new MockGithub({
     repo: {
-      actJS: {
+      publish: {
         files: [
           {
             src: path.resolve(__dirname, "..", "..", ".github"),
@@ -44,7 +44,7 @@ afterEach(async () => {
 });
 
 test("publish workflow", async () => {
-  const act = new Act(github.repo.getPath("actJS"));
+  const act = new Act(github.repo.getPath("publish"));
   const result = await act.setSecret("NPM_TOKEN", "fake_token").runJob("build", {
     mockSteps: {
       build: [
@@ -74,14 +74,14 @@ test("publish workflow", async () => {
       output: expect.any(String),
     },
     {
-      name: "Main npm run build",
-      status: 0,
-      output: expect.stringMatching(/tsc && tsc-alias/),
-    },
-    {
       name: "Main ./scripts/act.sh $VERSION",
       status: 0,
       output: expect.any(String),
+    },
+    {
+      name: "Main npm run build",
+      status: 0,
+      output: expect.stringMatching(/tsc && tsc-alias/),
     },
     {
       name: "Main echo Making sure that npm token is set - $NODE_AUTH_TOKEN",
