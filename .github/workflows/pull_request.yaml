@@ -1,0 +1,29 @@
+name: Pull Request Checks
+
+on: pull_request
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x]
+        os: [ubuntu-latest]
+      fail-fast: true
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install packages
+        run: npm ci
+
+      - name: Install act
+        run: ./scripts/act.sh $VERSION
+        env:
+          VERSION: 0.2.33
+      
+      - name: Test
+        run: npm test
