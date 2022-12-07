@@ -1,6 +1,6 @@
 {
   "name": "@kie/act-js",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "nodejs wrapper for nektos/act",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -26,12 +26,13 @@
     "nektos/act"
   ],
   "scripts": {
+    "prebuild": "./scripts/act.sh 0.2.33",
     "build": "tsc && tsc-alias",
     "postbuild": "cp -r ./bin ./build",
     "test": "jest unit/",
     "test:report": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
-    "test:ci": "jest --runInBand ci/",
-    "file": "ts-node-esm"
+    "test:ci": "jest --runInBand ./test/ci/",
+    "file": "ts-node"
   },
   "author": "Shubh Bapna <sbapna@redhat.com>",
   "license": "SEE LICENSE IN LICENSE",
@@ -53,7 +54,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@kie/mock-github": "^0.1.0",
+    "@kie/mock-github": "^0.1.1",
     "express": "^4.18.1",
     "yaml": "^2.1.3"
   },
