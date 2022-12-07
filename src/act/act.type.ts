@@ -16,11 +16,14 @@ export type Step = {
 };
 
 export type RunOpts = {
+  bind?: boolean;
   cwd?: string;
+  workflowFile?: string;
   artifactServer?: {
     path: string;
     port: string;
   };
   mockApi?: ResponseMocker[];
   mockSteps?: MockStep;
+  logFile?: string;
 };
