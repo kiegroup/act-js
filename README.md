@@ -358,6 +358,7 @@ Each run returns an array of `Step` objects that describes what was executed, wh
     output: "output of the command",
     // 0 implies it succeeded, 1 implies it failed and -1 implies something went wrong with the interface which should be reported to us
     status: 0 | 1 | -1,
+    groups?: {name: string, output: string}[] // output grouped by annotations if there were any
   },
 ];
 ```
