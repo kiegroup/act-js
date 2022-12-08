@@ -13,6 +13,12 @@ export type Step = {
   name: string;
   status: number;
   output: string;
+  groups?: Group[];
+};
+
+export type Group = {
+  name: string;
+  output: string;
 };
 
 export type RunOpts = {
