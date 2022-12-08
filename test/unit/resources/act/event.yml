@@ -1,0 +1,12 @@
+name: Mocked apis
+
+on: push
+
+jobs:
+  event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: event
+        run: echo "$EVENT"
+        env:
+          EVENT: ${{ github.event.some_event }}

@@ -7,17 +7,25 @@ import { homedir } from "os";
 import { ForwardProxy } from "@aj/proxy/proxy";
 import { ArgumentMap } from "@aj/map/argument-map";
 import { StepMocker } from "@aj/step-mocker/step-mocker";
+import { ActionEvent } from "@aj/action-event/action-event";
+import { EventJSON } from "@aj/action-event/action-event.types";
+import { writeFile } from "fs/promises";
 
 export class Act {
   private secrets: ArgumentMap;
   private cwd: string;
+  private workflowFile: string;
   private env: ArgumentMap;
+  private event: ActionEvent;
 
-  constructor(cwd?: string, defaultImageSize?: string) {
+  constructor(cwd?: string, workflowFile?: string, defaultImageSize?: string) {
     this.secrets = new ArgumentMap("-s");
     this.cwd = cwd ?? process.cwd();
+    this.workflowFile = workflowFile ?? this.cwd;
     this.env = new ArgumentMap("--env");
+    this.event = new ActionEvent();
     this.setDefaultImage(defaultImageSize);
+    this.setGithubStepSummary("/dev/stdout");
   }
 
   setCwd(cwd: string) {
@@ -25,8 +33,9 @@ export class Act {
     return this;
   }
 
-  getCwd() {
-    return this.cwd;
+  setWorkflowFile(workflowFile: string) {
+    this.workflowFile = workflowFile;
+    return this;
   }
 
   setSecret(key: string, val: string) {
@@ -56,6 +65,22 @@ export class Act {
 
   clearEnv() {
     this.env.map.clear();
+    this.setGithubStepSummary("/dev/stdout");
+    return this;
+  }
+
+  setGithubToken(token: string) {
+    this.setSecret("GITHUB_TOKEN", token);
+    return this;
+  }
+
+  setGithubStepSummary(file: string) {
+    this.setEnv("GITHUB_STEP_SUMMARY", file);
+    return this;
+  }
+
+  setEvent(event: EventJSON) {
+    this.event.event = event;
     return this;
   }
 
@@ -64,12 +89,18 @@ export class Act {
    * If working directory is not specified then node's current working directory is used
    * You can also list workflows specific to an event by passing the event name
    * @param cwd
+   * @param workflowFile
    * @param event
    */
-  async list(event?: string, cwd: string = this.getCwd()): Promise<Workflow[]> {
-    const response = await this.act(cwd, ...(event ? [event, "-l"] : ["-l"]));
+  async list(
+    event?: string,
+    cwd: string = this.cwd,
+    workflowFile: string = this.workflowFile
+  ): Promise<Workflow[]> {
+    const args = ["-W", workflowFile, "-l"];
+    const { data } = await this.act(cwd, ...(event ? [event, ...args] : args));
 
-    return response
+    return data
       .split("\n")
       .slice(1, -1) // remove first (title columns) and last column
       .filter((element) => element !== "" && element.split("  ").length > 1) // remove empty strings and warnings
@@ -104,14 +135,14 @@ export class Act {
   ) {
     if (opts?.mockSteps) {
       // there could multiple workflow files with same event triggers or job names. Act executes them all
-      const workflowNames = (await this.list(undefined, opts.cwd)).filter(
-        filter
-      );
+      const workflowNames = (
+        await this.list(undefined, opts.cwd, opts.workflowFile)
+      ).filter(filter);
       return Promise.all(
         workflowNames.map((name) => {
           const stepMocker = new StepMocker(
             name.workflowFile,
-            opts.cwd ?? this.getCwd()
+            opts.workflowFile ?? this.workflowFile
           );
           return stepMocker.mock(opts.mockSteps!);
         })
@@ -120,7 +151,10 @@ export class Act {
   }
 
   // wrapper around the act cli command
-  private act(cwd: string, ...args: string[]): Promise<string> {
+  private act(
+    cwd: string,
+    ...args: string[]
+  ): Promise<{ data: string; error: string }> {
     return new Promise((resolve, reject) => {
       // do not use spawnSync. will cause a deadlock when used with proxy settings
       const childProcess = spawn(ACT_BINARY, ["-W", cwd, ...args], { cwd });
@@ -140,10 +174,42 @@ export class Act {
         ) {
           reject(error);
         } else {
-          resolve(data);
+          resolve({ data, error });
         }
       });
     });
+  }
+
+  private async parseRunOpts(opts?: RunOpts) {
+    let proxy: ForwardProxy | undefined = undefined;
+    const actArguments: string[] = [];
+    if (opts?.mockApi) {
+      proxy = new ForwardProxy(opts.mockApi);
+      const address = await proxy.start();
+      this.setEnv("http_proxy", `http://${address}`);
+      this.setEnv("https_proxy", `http://${address}`);
+      this.setEnv("HTTP_PROXY", `http://${address}`);
+      this.setEnv("HTTPS_PROXY", `http://${address}`);
+    }
+
+    if (opts?.artifactServer) {
+      actArguments.push(
+        "--artifact-server-path",
+        opts?.artifactServer.path,
+        "--artifact-server-port",
+        opts?.artifactServer.port
+      );
+    }
+
+    if (opts?.bind) {
+      actArguments.push("--bind");
+    }
+
+    const cwd = opts?.cwd ?? this.cwd;
+    const workflowFile = opts?.workflowFile ?? this.workflowFile;
+    actArguments.push("-W", workflowFile);
+
+    return { cwd, proxy, actArguments };
   }
 
   /**
@@ -153,35 +219,31 @@ export class Act {
    * @returns
    */
   private async run(cmd: string[], opts?: RunOpts): Promise<Step[]> {
-    const secrets = this.secrets.toActArguments();
-    let proxy: ForwardProxy | undefined = undefined;
-    if (opts?.mockApi) {
-      proxy = new ForwardProxy(opts.mockApi);
-      const address = await proxy.start();
-      this.setEnv("http_proxy", `http://${address}`);
-      this.setEnv("https_proxy", `http://${address}`);
-      this.setEnv("HTTP_PROXY", `http://${address}`);
-      this.setEnv("HTTPS_PROXY", `http://${address}`);
-    }
+    const { cwd, actArguments, proxy } = await this.parseRunOpts(opts);
     const env = this.env.toActArguments();
-    const response = await this.act(
-      opts?.cwd ?? this.getCwd(),
+    const secrets = this.secrets.toActArguments();
+    const event = await this.event.toActArguments();
+
+    const { data, error } = await this.act(
+      cwd,
       ...cmd,
       ...secrets,
       ...env,
-      ...(opts?.artifactServer
-        ? [
-            "--artifact-server-path",
-            opts?.artifactServer.path,
-            "--artifact-server-port",
-            opts?.artifactServer.port,
-          ]
-        : [])
+      ...event,
+      ...actArguments
     );
+
+    const promises = [
+      this.event.removeEvent(),
+      this.logRawOutput(data + "\nErrors" + error, opts?.logFile),
+    ];
     if (proxy) {
-      await proxy.stop();
+      promises.push(proxy.stop());
     }
-    return this.extractRunOutput(response);
+
+    const result = this.extractRunOutput(data);
+    await Promise.all(promises);
+    return result;
   }
 
   /**
@@ -293,6 +355,12 @@ export class Act {
           break;
       }
       writeFileSync(actrcPath, actrc);
+    }
+  }
+
+  private async logRawOutput(output: string, logFile?: string) {
+    if (logFile) {
+      return writeFile(logFile, output);
     }
   }
 }

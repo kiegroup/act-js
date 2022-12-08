@@ -11,6 +11,7 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
   - [Current working directory](#current-working-directory)
   - [Secrets](#secrets)
   - [Env](#env)
+  - [Event payload](#event-payload)
   - [List workflows](#list-workflows)
   - [Run a job](#run-a-job)
     - [Using job id](#using-job-id)
@@ -61,26 +62,19 @@ For detailed usage on how you can use `act-js` please refer to [nektos/act](http
 
 ## API Usage
 
-Provides an interface for the [nektos/act](https://github.com/nektos/act/) tool to execute it programmatically. By default it uses the `act` executable that comes with the package. However, if you want to use a different executable you can do so by setting the env variable `ACT_BINARY` to point to the location of the executable you want to use. 
+Provides an interface for the [nektos/act](https://github.com/nektos/act/) tool to execute it programmatically. By default it uses the `act` executable that comes with the package. However, if you want to use a different executable you can do so by setting the env variable `ACT_BINARY` to point to the location of the executable you want to use.
 
-### Current working directory
+### Current working directory and Workflow file
 
-You can set the current working directory. This directory is from where `act` will read the workflow files from. Setting a current working directory is equivalent to calling `act` with `-W /path/to/cwd` option in the `/path/to/cwd` directory for any subsequent call. By default, the root of the current project is used as the current working directory.
+You can set the current working directory as well as the location of workflow files (wrt to the cwd). The current working directory is from where `act` will be executed from. The workflow file location is the location from which `act` will try to read the workflow files from. Setting the workflow file is equivalent to calling `act` with `-W /path/to/workflows` option.
 
-```typescript
-// define it during construction
-const act = new Act("path/to/directory/that/contains/workflowfile");
-
-// use the default current working directory
-act = new Act();
-
-// Set the current working directory after initialization
-act.setCwd("path/to/directory/that/contains/workflow");
-```
+By default, the root of the current project is used as the current working directory. By default, the workflow file location is the current working directory
 
 ### Secrets
 
-You can define, delete and clear secrets that will be used by `act` when you execute a run.
+You can define, delete and clear secrets that will be used by `act` when you execute a run.  
+
+The method `setGithubToken` is quick wrapper to set the `GITHUB_TOKEN` env variable.
 
 ```typescript
 let act = new Act();
@@ -92,7 +86,8 @@ act = act.setSecret("secret1", "value1");
 act
   .setSecret("secret1", "value1")
   .setSecret("secret2", "value2")
-  .setSecret("secret3", "value3");
+  .setSecret("secret3", "value3")
+  .setGithubToken("token");
 
 // you can delete a secret
 act.deleteSecret("secret1");
@@ -105,6 +100,8 @@ act.clearSecret();
 
 You can define, delete and clear env variables that will be used by `act` when you execute a run.
 
+The method `setGithubStepSummary` is quick wrapper to set the `GITHUB_STEP_SUMMARY` env variable. By default it is set to `/dev/stdout`
+
 ```typescript
 let act = new Act();
 
@@ -112,7 +109,11 @@ let act = new Act();
 act = act.setEnv("env1", "value1");
 
 // you can chain your setEnvs
-act.setEnv("env1", "value1").setEnv("env2", "value2").setEnv("env3", "value3");
+act
+  .setEnv("env1", "value1")
+  .setEnv("env2", "value2")
+  .setEnv("env3", "value3")
+  .setGithubStepSummary("/path/to/some/file");
 
 // you can delete a Env
 act.deleteEnv("env1");
@@ -120,6 +121,25 @@ act.deleteEnv("env1");
 // you clear all the envs that you had previously defined
 act.clearEnv();
 ```
+
+### Event payload  
+
+You can pass an [event payload](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads) during your workflow execution. It is equivalent to calling `act` with the `-e` flag set.
+
+```typescript
+let act = new Act();
+
+act
+  .setEvent({
+    pull_request: {
+      head: {
+        ref: "branch"
+      }
+    }
+  })
+  .runEvent("pull_request");
+```
+
 
 ### List workflows
 
@@ -160,13 +180,17 @@ When running a job (which ever way), you can optionally pass run options
 
 ```typescript
 {
-  cwd?: string, // overrides the global cwd and uses the one passed in options
+  cwd?: string; // overrides the global cwd and uses the one passed in options
+  workflowFile?: string; // overrides the global workflow file path and uses the one passed in options
+  bind?: boolean; // bind the cwd instead of copying it during workflow execution
   // activates the artifact server
   artifactServer?: {
     path: string; // where to store the uploaded artifacts
     port: string; // where to run the artifact server
   };
   mockApi: ResponseMocker[]; // specify the apis you want to mock. ResponseMocker is from mock-github
+  mockSteps: MockStep; // specify which steps you want to mock
+  logFile?: string; // write the raw output act produces to this file for debugging purposes
 }
 ```
 
@@ -348,7 +372,6 @@ You can also take look at how the workflow files are being tested in this reposi
 ## Limitations
 
 Any limitations of `nektos/act` apply here as well.
-
 
 ## Version
 

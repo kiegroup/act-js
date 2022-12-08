@@ -1,26 +1,15 @@
 import path from "path";
 import { Act } from "@aj/act/act";
 import { Mockapi } from "@kie/mock-github";
-import { readFileSync, writeFileSync } from "fs";
+import fs from "fs";
+import { homedir } from "os";
 
 const resources = path.resolve(__dirname, "..", "resources", "act");
-
-describe("cwd", () => {
-  test("set", () => {
-    const act = new Act();
-    expect(act.setCwd("dirname")).toBe(act);
-    expect(act.getCwd()).toBe("dirname");
-  });
-  test("get", () => {
-    const act = new Act();
-    expect(act.getCwd()).toBe(process.cwd());
-  });
-});
 
 describe("list", () => {
   test("without event", async () => {
     const act = new Act();
-    const list = await act.list(undefined, resources);
+    const list = await act.list(undefined, undefined, resources);
     // act seems to behave a bit differently in different env - In GHA the pull request worklow is listed while on local machin it isn't
     expect(list).toEqual(
       expect.arrayContaining([
@@ -44,7 +33,7 @@ describe("list", () => {
 
   test("with event", async () => {
     const act = new Act();
-    const list = await act.list("pull_request", resources);
+    const list = await act.list("pull_request", __dirname, resources);
     expect(list).toStrictEqual([
       {
         jobId: "pr",
@@ -63,7 +52,7 @@ describe("run", () => {
     const output = await act
       .setSecret("SECRET1", "secret1")
       .setEnv("ENV1", "env")
-      .runJob("push1", { cwd: resources });
+      .runJob("push1", { workflowFile: resources, cwd: __dirname });
 
     expect(output).toMatchObject([
       {
@@ -91,7 +80,7 @@ describe("run", () => {
     const output = await act
       .setSecret("SECRET1", "secret1")
       .setEnv("ENV1", "env")
-      .runEvent("pull_request", { cwd: resources });
+      .runEvent("pull_request", { workflowFile: resources });
 
     expect(output).toStrictEqual([
       {
@@ -136,7 +125,7 @@ describe("run", () => {
 
     const act = new Act();
     const output = await act.runJob("mock", {
-      cwd: resources,
+      workflowFile: resources,
       mockApi: [
         mockapi.mock.google.root
           .get()
@@ -158,8 +147,8 @@ describe("run", () => {
   });
 
   test("run job with mocked step", async () => {
-    const original = readFileSync(path.join(resources, "push1.yml"), "utf8");
-    const act = new Act(resources);
+    const original = fs.readFileSync(path.join(resources, "push1.yml"), "utf8");
+    const act = new Act(__dirname, resources);
     const output = await act.runJob("push1", {
       mockSteps: {
         push1: [
@@ -193,15 +182,15 @@ describe("run", () => {
       { name: "Main pass", status: 0, output: "pass" },
       { name: "Main fail", status: 1, output: "fail" },
     ]);
-    writeFileSync(path.join(resources, "push1.yml"), original);
+    fs.writeFileSync(path.join(resources, "push1.yml"), original);
   });
 
   test("run event with mocked step", async () => {
-    const original = readFileSync(
+    const original = fs.readFileSync(
       path.join(resources, "pull_request.yml"),
       "utf8"
     );
-    const act = new Act(resources);
+    const act = new Act(undefined, resources);
     const output = await act.runEvent("pull_request", {
       mockSteps: {
         pr: [
@@ -235,6 +224,68 @@ describe("run", () => {
       { name: "Main pass", status: 0, output: "pass" },
       { name: "Main fail", status: 1, output: "fail" },
     ]);
-    writeFileSync(path.join(resources, "pull_request.yml"), original);
+    fs.writeFileSync(path.join(resources, "pull_request.yml"), original);
   });
+
+  test("run with event json", async () => {
+    const act = new Act();
+    const output = await act
+      .setEvent({ some_event: "some_event" })
+      .runJob("event", { workflowFile: resources });
+
+    expect(output).toMatchObject([
+      {
+        name: "Main event",
+        status: 0,
+        output: "some_event",
+      },
+    ]);
+  });
+});
+
+describe("initialization", () => {
+  test("actrc exists", () => {
+    jest.spyOn(fs, "existsSync").mockReturnValueOnce(true);
+    expect(() => {
+      new Act();
+    }).not.toThrowError();
+  });
+
+  test.each([
+    [
+      "micro",
+      "micro",
+      "-P ubuntu-latest=node:16-buster-slim\n-P ubuntu-20.04=node:16-buster-slim\n-P ubuntu-18.04=node:16-buster-slim\n-P ubuntu-22.04=node:16-bullseye-slim",
+    ],
+    [
+      "medium",
+      "medium",
+      "-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest\n-P ubuntu-20.04=ghcr.io/catthehacker/ubuntu:act-20.04\n-P ubuntu-18.04=ghcr.io/catthehacker/ubuntu:act-18.04\n-P ubuntu-22.04=ghcr.io/catthehacker/ubuntu:act-22.04",
+    ],
+    [
+      "large",
+      "large",
+      "-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest\n-P ubuntu-20.04=ghcr.io/catthehacker/ubuntu:full-20.04\n-P ubuntu-18.04=ghcr.io/catthehacker/ubuntu:full-18.04",
+    ],
+    [
+      "default",
+      undefined,
+      "-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest\n-P ubuntu-20.04=ghcr.io/catthehacker/ubuntu:act-20.04\n-P ubuntu-18.04=ghcr.io/catthehacker/ubuntu:act-18.04\n-P ubuntu-22.04=ghcr.io/catthehacker/ubuntu:act-22.04",
+    ],
+  ])(
+    "actrc does not exist. make with - %p image",
+    (_title: string, image: string | undefined, expected: string) => {
+      jest.spyOn(fs, "existsSync").mockReturnValueOnce(false);
+      const writeMock = jest
+        .spyOn(fs, "writeFileSync")
+        .mockImplementationOnce((_file, data) => data);
+      expect(() => {
+        new Act(undefined, undefined, image);
+      }).not.toThrowError();
+      expect(writeMock).toHaveBeenCalledWith(
+        path.join(homedir(), ".actrc"),
+        expected
+      );
+    }
+  );
 });
