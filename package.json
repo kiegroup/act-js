@@ -54,7 +54,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@kie/mock-github": "^0.1.1",
+    "@kie/mock-github": "^0.1.2",
     "express": "^4.18.1",
     "yaml": "^2.1.3"
   },
