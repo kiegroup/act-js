@@ -241,6 +241,40 @@ describe("run", () => {
       },
     ]);
   });
+
+  test("run with group annotations", async () => {
+    const act = new Act();
+    const output = await act.runJob("groups", { workflowFile: resources });
+
+    expect(output).toStrictEqual([
+      {
+        name: "Main Group 1 of log lines",
+        status: 0,
+        output: "Inside group 1",
+        groups: [
+          {
+            name: "Group 1",
+            output: "Inside group 1",
+          },
+        ],
+      },
+      {
+        name: "Main Group 2 of log lines",
+        status: 0,
+        output: "Inside group 2 part 1\nInside group 2 part 2",
+        groups: [
+          {
+            name: "Group 2 part 1",
+            output: "Inside group 2 part 1",
+          },
+          {
+            name: "Group 2 part 2",
+            output: "Inside group 2 part 2",
+          },
+        ],
+      },
+    ]);
+  });
 });
 
 describe("initialization", () => {
