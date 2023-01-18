@@ -1,4 +1,4 @@
-import { ResponseMocker } from "@aj/proxy/proxy.types";
+import { ResponseMocker } from "@kie/mock-github";
 import { MockStep } from "@aj/step-mocker/step-mocker.types";
 
 export type Workflow = {
@@ -29,7 +29,7 @@ export type RunOpts = {
     path: string;
     port: string;
   };
-  mockApi?: ResponseMocker[];
+  mockApi?: ResponseMocker<any, any>[];
   mockSteps?: MockStep;
   logFile?: string;
 };
