@@ -1,7 +1,8 @@
 import { ForwardProxy } from "@aj/proxy/proxy";
+import { Mockapi } from "@aj/mockapi/mockapi";
 import axios from "axios";
 import { Octokit } from "@octokit/rest";
-import { Mockapi, Moctokit } from "@kie/mock-github";
+import { Moctokit } from "@kie/mock-github";
 import { spawn } from "child_process";
 
 afterEach(() => {
