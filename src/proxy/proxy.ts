@@ -1,19 +1,19 @@
 import net from "net";
 import express from "express";
 import http from "http";
-import { ResponseMocker } from "@aj/proxy/proxy.types";
+import { ResponseMocker } from "@kie/mock-github";
 import { networkInterfaces } from "os";
 import internal from "stream";
 
 export class ForwardProxy {
-  private apis: ResponseMocker[];
+  private apis: ResponseMocker<any, any>[];
   private app: express.Express;
   private server: http.Server;
   private logger: (msg: string) => void;
   private currentConnections: Record<number, internal.Duplex>;
   private currentSocketId: number;
 
-  constructor(apis: ResponseMocker[], verbose: boolean = false) {
+  constructor(apis: ResponseMocker<any, any>[], verbose: boolean = false) {
     this.apis = apis;
     this.app = express();
     this.logger = verbose ? console.log : (_msg) => undefined;

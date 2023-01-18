@@ -1,0 +1,18 @@
+{
+  "google": {
+    "baseUrl": "https://google.com",
+    "endpoints": {
+      "root": {
+        "get": {
+          "path": "/",
+          "method": "get",
+          "parameters": {
+            "path": [],
+            "query": ["search"],
+            "body": []
+          }
+        }
+      }
+    }
+  }
+}

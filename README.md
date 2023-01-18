@@ -19,6 +19,16 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
     - [Mocking apis during the run](#mocking-apis-during-the-run)
     - [Mocking steps](#mocking-steps)
     - [Run result](#run-result)
+- [Mockapi](#mockapi)
+  - [Defining a schema](#defining-a-schema)
+  - [Mock an api](#mock-an-api-1)
+    - [Mock the entire endpoint](#mock-the-entire-endpoint-1)
+    - [Mock an endpoint for specific parameter(s)](#mock-an-endpoint-for-specific-parameters-1)
+  - [Replying with a response](#replying-with-a-response-1)
+    - [Reply once](#reply-once-1)
+    - [Reply N times](#reply-n-times-1)
+    - [Chaining responses](#chaining-responses-1)
+  - [Typescript Support](#typescript-support-1)
 - [Example with Mock Github](#example-with-mock-github)
 - [Limitations](#limitations)
 - [Version](#version)
@@ -72,7 +82,7 @@ By default, the root of the current project is used as the current working direc
 
 ### Secrets
 
-You can define, delete and clear secrets that will be used by `act` when you execute a run.  
+You can define, delete and clear secrets that will be used by `act` when you execute a run.
 
 The method `setGithubToken` is quick wrapper to set the `GITHUB_TOKEN` env variable.
 
@@ -122,7 +132,7 @@ act.deleteEnv("env1");
 act.clearEnv();
 ```
 
-### Event payload  
+### Event payload
 
 You can pass an [event payload](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads) during your workflow execution. It is equivalent to calling `act` with the `-e` flag set.
 
@@ -133,13 +143,12 @@ act
   .setEvent({
     pull_request: {
       head: {
-        ref: "branch"
-      }
-    }
+        ref: "branch",
+      },
+    },
   })
   .runEvent("pull_request");
 ```
-
 
 ### List workflows
 
@@ -238,11 +247,12 @@ result = await act
 
 #### Mocking apis during the run
 
-You can use [Mockapi](https://github.com/kiegroup/mock-github#mockapi) and [Moctokit](https://github.com/kiegroup/mock-github#moctokit) to mock any kind of HTTP and HTTPS requests during your workflow run provided that the client being used honours HTTP_PROXY and HTTPS_PROXY env variables. Depending on the client, for HTTPS they might issue a CONNECT request to open a secure TCP tunnel. In this case `Act` won't be able to mock the HTTPS request.
+You can use [Mockapi](#mockapi) and [Moctokit](https://github.com/kiegroup/mock-github#moctokit) to mock any kind of HTTP and HTTPS requests during your workflow run provided that the client being used honours HTTP_PROXY and HTTPS_PROXY env variables. Depending on the client, for HTTPS they might issue a CONNECT request to open a secure TCP tunnel. In this case `Act` won't be able to mock the HTTPS request.
 (Note - For Octokit, you can mock HTTPS requests because it does not issues a CONNECT request)
 
 ```typescript
-import { Moctokit, Mockapi } from "@kie/mock-github";
+import { Moctokit } from "@kie/mock-github";
+import { Mockapi } from "@kie/act-js";
 const moctokit = new Moctokit();
 const mockapi = new Mockapi({
   customApi: {
@@ -362,6 +372,369 @@ Each run returns an array of `Step` objects that describes what was executed, wh
   },
 ];
 ```
+
+## Mockapi
+
+Provides a simple interface to mock any api schema that you define.
+
+### Defining a schema
+
+You need a define an api schema for this class and it will automatically construct mockers for all the endpoints you define.
+
+You can directly pass the schema during initialization
+
+```typescript
+const mockapi = new Mockapi({
+  google: {
+    baseUrl: "https://google.com",
+    endpoints: {
+      root: {
+        get: {
+          path: "/",
+          method: "get",
+          parameters: {
+            path: [],
+            query: ["logo"],
+            body: [],
+          },
+        },
+      },
+    },
+  },
+});
+```
+
+Or you can pass a path to a JSON file containing the schema
+
+```typescript
+const mockapi = new Mockapi("/path/to/json");
+```
+
+Schema Description
+
+```typescript
+{
+  [name_of_api: string]: {
+    baseUrl: "the the base url for the api",
+    // different routes for the base url that are available
+    endpoints: {
+      // You can group similar api's together. For example all api's related to repositories can be grouped together
+      [scope: string]: {
+        // name for the actual endpoint
+        [endpoint_name: string]: {
+          // path for the endpoint. You can define path parameters by putting them in between curly braces. Below is an example where "params" is a path paramter
+          path: "/path/to/api/with/{params}/and/more",
+          method: "get" | "post" | "put" | "patch" | "delete",
+          paramters: {
+            // any path parameters defined in the path need to be included in this array. Note that the name of paramter must match in the path
+            path: ["params"],
+            // you can defined any url queries
+            query: ["query"],
+            // you can define any request body fields here
+            body: ["body"],
+          }
+        }
+      }
+    }
+  },
+  // you can define multiple APIs like above
+}
+```
+
+### Mock an api
+
+The api(s) from the schema can simple be mocked as `mock.[api_name].[scope_name].[method_name](parms)`
+
+#### Mock the entire endpoint
+
+You can mock an entire endpoint by simply passing no arguments.
+
+```typescript
+const mockapi = new Mockapi({
+  google: {
+    baseUrl: "https://google.com",
+    endpoints: {
+      root: {
+        get: {
+          path: "/{search}",
+          method: "get",
+          parameters: {
+            path: ["search"],
+            query: ["logo"],
+            body: [],
+          },
+        },
+      },
+    },
+  },
+  {
+    amazon: {
+      baseUrl: "https://amazon.com",
+      endpoints: {
+        items: {
+          updateItem: {
+            path: "/update/{itemId}",
+            method: "post",
+            paramters: {
+              path: ["itemId"],
+              query: [],
+              body: ["name", "description"]
+            }
+          }
+        }
+      }
+    }
+  }
+});
+/**
+ * This translates to mocking all possible values of path, query and body paramters
+ * mentioned in the schema for "https://google.com/{search}"
+ */
+mockapi.mock.google.root
+  .get()
+  .reply({ status: 200, data: { message: "found" } });
+
+/**
+ * This translates to mocking all possible values of path, query and body paramters
+ * mentioned in the schema for "https://amazon.com/update/{itemId}"
+ */
+mockapi.mock.amazon.items
+  .updateItem()
+  .reply({ status: 201, data: { message: "posted" } });
+
+// this will throw an error since there was no ibm api defined in the schema
+mockapi.mock.ibm.root.get().reply({status: 201, data: { message: "posted" }})
+```
+
+#### Mock an endpoint for specific parameter(s)
+
+You can mock an endpoint for certain paramters. So only if the call to the api has parameters which match the values you defined, it will be get the mocked response.
+
+```typescript
+const mockapi = new Mockapi({
+  google: {
+    baseUrl: "https://google.com",
+    endpoints: {
+      root: {
+        get: {
+          path: "/{search}",
+          method: "get",
+          parameters: {
+            path: ["search"],
+            query: ["logo"],
+            body: [],
+          },
+        },
+      },
+    },
+  },
+  {
+    amazon: {
+      baseUrl: "https://amazon.com",
+      endpoints: {
+        items: {
+          updateItem: {
+            path: "/update/{itemId}",
+            method: "post",
+            paramters: {
+              path: ["itemId"],
+              query: [],
+              body: ["name", "description"]
+            }
+          }
+        }
+      }
+    }
+  }
+});
+/**
+ * This translates to mocking "https://google.com/football?logo='football.png'" and
+ * "https://google.com/football?logo='football.jpeg'" only
+ */
+mockapi.mock.google.root
+  .get({search: "football", logo: /football\.(png|jpeg)/})
+  .reply({ status: 200, data: { message: "found" } });
+
+/**
+ * This translates to mocking an api call to "https://amazon.com/update/20" with a
+ * request body where "name" is "book" and description starts with "This is book is"
+ */
+mockapi.mock.amazon.items
+  .updateItem({itemId: 20, name: "book", description: /This is book is .+/})
+  .reply({ status: 201, data: { message: "posted" } });
+```
+
+### Replying with a response
+
+The endpoint isn't actually mocked with calling `reply` with response you want send back if your application makes an api call to that particular endpoint.
+
+#### Reply once
+
+You can reply with a response exactly once i.e. the 1st api call to the mocked endpoint will respond with whatever response you set and the 2nd api call won't be mocked.
+
+```typescript
+const mockapi = new Mockapi({
+  google: {
+    baseUrl: "https://google.com",
+    endpoints: {
+      root: {
+        get: {
+          path: "/{search}",
+          method: "get",
+          parameters: {
+            path: ["search"],
+            query: ["logo"],
+            body: [],
+          },
+        },
+      },
+    },
+  },
+});
+
+/**
+ * Responds with status 200 and data { message: "message" } exactly once
+ */
+mockapi.mock.google.root
+  .get()
+  .reply({ status: 200, data: { message: "message" } });
+```
+
+#### Reply N times
+
+You can repeat the same response n times i.e. n consecutive calls to the mocked api will get the same response back
+
+```typescript
+const mockapi = new Mockapi({
+  google: {
+    baseUrl: "https://google.com",
+    endpoints: {
+      root: {
+        get: {
+          path: "/{search}",
+          method: "get",
+          parameters: {
+            path: ["search"],
+            query: ["logo"],
+            body: [],
+          },
+        },
+      },
+    },
+  }
+});
+
+/**
+ * Responds with status 200 and data { message: "message" } for exactly 5 consecutive api calls
+ */
+mockapi.mock.google.root
+  .get()
+  .reply({ status: 200, data: { message: "message" } }, repeat: 5);
+```
+
+#### Setting response and replying later
+
+You can set an array of responses but actually mock the api later on. Responses are sent in order of their position in the array. This is extremely useful when using moctokit with [Action Compiler](#action-compiler)
+
+```typescript
+const mockapi = new Mockapi({
+  google: {
+    baseUrl: "https://google.com",
+    endpoints: {
+      root: {
+        get: {
+          path: "/{search}",
+          method: "get",
+          parameters: {
+            path: ["search"],
+            query: ["logo"],
+            body: [],
+          },
+        },
+      },
+    },
+  }
+});
+
+/**
+ * Add just 1 response to an array of responses but don't actually mock the endpoint
+ */
+const mockedGoogle = mockapi.mock.google.root.get()
+                                             .setResponse({
+                                                status: 200,
+                                                data: {message: "message"}, repeat: 5
+                                              });
+
+/**
+ * Adds all of these responses after the above response in the array. Again doesn't actually mock the api
+ */
+mockedGoogle.setResponse([
+  {status: 201, data: {message: "something"}},
+  {status: 400, data: {message: "something else"}, repeat: 2}
+  {status: 404, data: {message: "something completely difference"}}
+]);
+
+/**
+ * Now the api is actually being mocked.
+ * For the 1st, 2nd, 3rd, 4th and 5th api call the response status would be 200
+ * For the 6th api call the response status would be 201
+ * For the 7th and 8th api call the response status would be 400
+ * For the 9th api call the response status would be 404
+ */
+mockedGoogle.reply();
+```
+
+#### Chaining responses
+
+You can chain multiple responses together
+
+```typescript
+const mockapi = new Mockapi({
+  google: {
+    baseUrl: "https://google.com",
+    endpoints: {
+      root: {
+        get: {
+          path: "/{search}",
+          method: "get",
+          parameters: {
+            path: ["search"],
+            query: ["logo"],
+            body: [],
+          },
+        },
+      },
+    },
+  },
+});
+
+/**
+ * For the 1st, 2nd, 3rd, 4th and 5th api call the response status would be 200
+ * For the 6th api call the response status would be 201
+ * For the 7th and 8th api call the response status would be 400
+ * For the 9th api call the response status would be 404
+ */
+mockapi.mock.google.root
+  .get()
+  .reply({
+    status: 200,
+    data: { owner_url: "whatever url" },
+    repeat: 5,
+  })
+  .setResponse([
+    { status: 201, data: { owner_url: "something" } },
+    { status: 400, data: { owner_url: "something else" }, repeat: 2 },
+  ])
+  .reply()
+  .reply({
+    status: 404,
+    data: { owner_url: "something completely difference" },
+  });
+```
+
+### Typescript Support
+
+Since the endpoint mockers are generated dynamically based on the api schema, typescript won't be able to enfource datatype checks like it does for [Moctokit](https://github.com/kiegroup/mock-github#moctokit)
 
 ## Example with Mock Github
 

@@ -1,6 +1,6 @@
 import path from "path";
 import { Act } from "@aj/act/act";
-import { Mockapi } from "@kie/mock-github";
+import { Mockapi } from "@aj/mockapi/mockapi";
 import fs from "fs";
 import { homedir } from "os";
 
