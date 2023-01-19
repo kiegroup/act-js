@@ -741,7 +741,9 @@ Since the endpoint mockers are generated dynamically based on the api schema, ty
 You can use this library along with [mock-github](https://github.com/kiegroup/mock-github) to test your workflow files as well as your custom actions.
 Here are some [examples](https://github.com/shubhbapna/mock-github-act-js-examples) on how to do so.
 
-You can also take look at how the workflow files are being tested in this repository - [ci-check.yaml](.github/workflows/ci-checks.yaml)
+You can also take look at the following:
+ - Testing workflow files in this repository - [ci-check.yaml](.github/workflows/ci-checks.yaml)
+ - End to end tests for a custom github action - [build-chain](https://github.com/kiegroup/github-action-build-chain/tree/main/test/e2e)
 
 ## Limitations
 
