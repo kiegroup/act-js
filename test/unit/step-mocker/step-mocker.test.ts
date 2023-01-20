@@ -132,7 +132,7 @@ describe("locateSteps", () => {
       ],
     });
     const workflow = stringify(
-      parse(data.replace('echo "pull request"', "echo step"))
+      parse(data.replace("echo \"pull request\"", "echo step"))
     );
     expect(writeFileSyncMock).toHaveBeenLastCalledWith(
       path.join(__dirname, "workflow.yaml"),
@@ -154,7 +154,7 @@ describe("locateSteps", () => {
       ],
     });
     const workflow = stringify(
-      parse(data.replace('echo $TEST1', "echo step"))
+      parse(data.replace("echo $TEST1", "echo step"))
     );
     expect(writeFileSyncMock).toHaveBeenLastCalledWith(
       path.join(__dirname, "workflow.yaml"),
@@ -176,7 +176,7 @@ describe("locateSteps", () => {
       ],
     });
     const workflow = stringify(
-      parse(data.replace('uses: actions/checkout@v3', "run: echo step"))
+      parse(data.replace("uses: actions/checkout@v3", "run: echo step"))
     );
     expect(writeFileSyncMock).toHaveBeenLastCalledWith(
       path.join(__dirname, "workflow.yaml"),
@@ -198,7 +198,7 @@ describe("locateSteps", () => {
       ],
     });
     const workflow = stringify(
-      parse(data.replace('echo run', "echo step"))
+      parse(data.replace("echo run", "echo step"))
     );
     expect(writeFileSyncMock).toHaveBeenLastCalledWith(
       path.join(__dirname, "workflow.yaml"),

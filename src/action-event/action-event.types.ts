@@ -1,1 +1,1 @@
-export type EventJSON = Record<string, any>;
+export type EventJSON = Record<string, unknown>;

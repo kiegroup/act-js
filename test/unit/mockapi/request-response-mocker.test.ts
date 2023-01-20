@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { EndpointMethod } from "@kie/mock-github";
 import { MockapiRequestMocker } from "@aj/mockapi/request/request-mocker";

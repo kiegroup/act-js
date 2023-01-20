@@ -1,5 +1,5 @@
-import { Moctokit } from "@kie/mock-github"
-import { Mockapi  } from "@aj/mockapi/mockapi"
+import { Moctokit } from "@kie/mock-github";
+import { Mockapi  } from "@aj/mockapi/mockapi";
 
 export type ResponseMocker = ReturnType<typeof Mockapi.prototype.mock["any"]["any"]["any"]> | ReturnType<Extract<typeof Moctokit.prototype.rest>>;
 

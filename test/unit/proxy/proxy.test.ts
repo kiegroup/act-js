@@ -75,7 +75,7 @@ describe("http", () => {
     process.env["http_proxy"] = `http://${ip}`;
     process.env["https_proxy"] = `http://${ip}`;
 
-    const axiosResponse = await axios.get(`http://google.com/`);
+    const axiosResponse = await axios.get("http://google.com/");
     expect(axiosResponse.data).toStrictEqual({ msg: "mocked_response" });
 
     const octokit = new Octokit();
@@ -117,7 +117,7 @@ describe("http", () => {
     process.env["https_proxy"] = `http://${ip}`;
 
     await expect(
-      axios.get(`http://redhat.com/`, {
+      axios.get("http://redhat.com/", {
         maxRedirects: 0,
       })
     ).rejects.toThrowError("Request failed with status code 301");
@@ -187,14 +187,14 @@ async function executeCurl(args: string[]) {
     const childProcess = spawn("curl", args);
     let data = "";
     let error = "";
-    childProcess.stdout.on("data", (chunk) => {
+    childProcess.stdout.on("data", chunk => {
       data += chunk.toString();
     });
-    childProcess.stderr.on("data", (chunk) => {
+    childProcess.stderr.on("data", chunk => {
       error += chunk.toString();
     });
 
-    childProcess.on("close", (code) => {
+    childProcess.on("close", code => {
       if (code === null) {
         reject(error);
       } else {

@@ -15,9 +15,9 @@ export class ArgumentMap {
    * @returns
    */
   toActArguments(): string[] {
-    let args = [];
+    const args = [];
     for (const [key, val] of this._map.entries()) {
-      args.push(this.prefix, `${key}=${val}`)
+      args.push(this.prefix, `${key}=${val}`);
     }
     return args;
   }

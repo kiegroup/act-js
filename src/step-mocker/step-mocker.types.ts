@@ -70,23 +70,23 @@ export type StepIdentifier =
 export function isStepIdentifierUsingName(
   step: StepIdentifier
 ): step is StepIdentifierUsingName {
-  return step.hasOwnProperty("name");
+  return Object.prototype.hasOwnProperty.call(step, "name");
 }
 
 export function isStepIdentifierUsingId(
   step: StepIdentifier
 ): step is StepIdentifierUsingId {
-  return step.hasOwnProperty("id");
+  return Object.prototype.hasOwnProperty.call(step, "id");
 }
 
 export function isStepIdentifierUsingUses(
   step: StepIdentifier
 ): step is StepIdentifierUsingUses {
-  return step.hasOwnProperty("uses");
+  return Object.prototype.hasOwnProperty.call(step, "uses");
 }
 
 export function isStepIdentifierUsingRun(
   step: StepIdentifier
 ): step is StepIdentifierUsingUses {
-  return step.hasOwnProperty("run");
+  return Object.prototype.hasOwnProperty.call(step, "run");
 }

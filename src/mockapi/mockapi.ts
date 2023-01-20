@@ -25,7 +25,7 @@ export class Mockapi {
    * @returns
    */
   private apiSchemaToMethod() {
-    let methods: MockapiMethod = {};
+    const methods: MockapiMethod = {};
     for (const apiName in this.apiSchema) {
       if (!methods[apiName]) {
         methods[apiName] = {};

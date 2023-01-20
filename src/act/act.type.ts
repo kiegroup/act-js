@@ -29,7 +29,7 @@ export type RunOpts = {
     path: string;
     port: string;
   };
-  mockApi?: ResponseMocker<any, any>[];
+  mockApi?: ResponseMocker<unknown, number>[];
   mockSteps?: MockStep;
   logFile?: string;
 };
