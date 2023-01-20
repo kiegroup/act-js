@@ -13,7 +13,7 @@ describe("no version change", () => {
     const json = await axios.get("https://unpkg.com/@kie/act-js@latest/package.json");
     const version = json.data.version;
     github = await setup(version);
-  })
+  });
 
   afterEach(async () => teardown(github));
 
@@ -38,7 +38,7 @@ describe("no version change", () => {
         output: expect.any(String),
       },
       {
-        name: 'Main echo "No version change detected in package.json. Won\'t publish"',
+        name: "Main echo \"No version change detected in package.json. Won't publish\"",
         status: 0,
         output: "No version change detected in package.json. Won't publish",
       },
@@ -49,14 +49,14 @@ describe("no version change", () => {
       },
     ]);
   });
-})
+});
 
 describe("version change", () => {
   let github: MockGithub;
 
   beforeEach(async () => {
     github = await setup("999.999.999");
-  })
+  });
 
   afterEach(async () => teardown(github));
 
@@ -114,7 +114,7 @@ describe("version change", () => {
       },
     ]);
   });
-})
+});
 
 async function setup(version: string) {
   const packageJson = readFileSync(

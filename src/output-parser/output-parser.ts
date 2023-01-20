@@ -29,7 +29,7 @@ export class OutputParser {
    * @returns
    */
   parseOutput(): Step[] {
-    const lines = this.output.split("\n").map((line) => line.trim());
+    const lines = this.output.split("\n").map(line => line.trim());
     for (const line of lines) {
       this.parseRun(line);
       this.parseSuccess(line);
@@ -39,9 +39,9 @@ export class OutputParser {
       this.parseStepOutput(line);
     }
 
-    let result: Step[] = [];
-    Object.values(this.stepMatrix).forEach((jobs) => {
-      Object.values(jobs).forEach((step) => {
+    const result: Step[] = [];
+    Object.values(this.stepMatrix).forEach(jobs => {
+      Object.values(jobs).forEach(step => {
         result.push(step);
       });
     });

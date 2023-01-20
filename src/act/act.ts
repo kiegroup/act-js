@@ -104,9 +104,9 @@ export class Act {
     return data
       .split("\n")
       .slice(1, -1) // remove first (title columns) and last column
-      .filter((element) => element !== "" && element.split("  ").length > 1) // remove empty strings and warnings
-      .map((element) => {
-        const splitElement = element.split("  ").filter((val) => val !== ""); // remove emoty strings
+      .filter(element => element !== "" && element.split("  ").length > 1) // remove empty strings and warnings
+      .map(element => {
+        const splitElement = element.split("  ").filter(val => val !== ""); // remove emoty strings
         return {
           jobId: splitElement[1].trim(),
           jobName: splitElement[2].trim(),
@@ -118,13 +118,13 @@ export class Act {
   }
 
   async runJob(jobId: string, opts?: RunOpts): Promise<Step[]> {
-    await this.handleStepMocking((workflow) => workflow.jobId === jobId, opts);
+    await this.handleStepMocking(workflow => workflow.jobId === jobId, opts);
     return this.run(["-j", jobId], opts);
   }
 
   async runEvent(event: string, opts?: RunOpts): Promise<Step[]> {
     await this.handleStepMocking(
-      (workflow) => workflow.events.includes(event),
+      workflow => workflow.events.includes(event),
       opts
     );
     return this.run([event], opts);
@@ -140,7 +140,7 @@ export class Act {
         await this.list(undefined, opts.cwd, opts.workflowFile)
       ).filter(filter);
       return Promise.all(
-        workflowNames.map((name) => {
+        workflowNames.map(name => {
           const stepMocker = new StepMocker(
             name.workflowFile,
             opts.workflowFile ?? this.workflowFile
@@ -161,14 +161,14 @@ export class Act {
       const childProcess = spawn(ACT_BINARY, ["-W", cwd, ...args], { cwd });
       let data = "";
       let error = "";
-      childProcess.stdout.on("data", (chunk) => {
+      childProcess.stdout.on("data", chunk => {
         data += chunk.toString();
       });
-      childProcess.stderr.on("data", (chunk) => {
+      childProcess.stderr.on("data", chunk => {
         error += chunk.toString();
       });
 
-      childProcess.on("close", (code) => {
+      childProcess.on("close", code => {
         if (
           code === null ||
           /Cannot connect to the Docker daemon at .+/.test(error)

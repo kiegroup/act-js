@@ -56,7 +56,7 @@ describe("run", () => {
 
     expect(output).toMatchObject([
       {
-        name: 'Main echo "push 1"',
+        name: "Main echo \"push 1\"",
         status: 0,
         output: "push 1",
       },
@@ -84,7 +84,7 @@ describe("run", () => {
 
     expect(output).toStrictEqual([
       {
-        name: 'Main echo "pull request"',
+        name: "Main echo \"pull request\"",
         status: 0,
         output: "pull request",
       },
@@ -165,7 +165,7 @@ describe("run", () => {
     });
     expect(output).toMatchObject([
       {
-        name: 'Main echo "push 1"',
+        name: "Main echo \"push 1\"",
         status: 0,
         output: "push 1",
       },
@@ -207,7 +207,7 @@ describe("run", () => {
     });
     expect(output).toStrictEqual([
       {
-        name: 'Main echo "pull request"',
+        name: "Main echo \"pull request\"",
         status: 0,
         output: "pull request",
       },

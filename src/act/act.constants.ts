@@ -7,4 +7,4 @@ export const DEFAULT_JOB: Step = {
   output: "",
 };
 
-export const ACT_BINARY = process.env["ACT_BINARY"] ?? path.resolve(__dirname, "..", "..", "bin", "act")
+export const ACT_BINARY = process.env["ACT_BINARY"] ?? path.resolve(__dirname, "..", "..", "bin", "act");

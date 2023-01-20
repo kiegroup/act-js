@@ -32,7 +32,7 @@ export class StepMocker {
           }
           step.run = mockStep.mockWith;
         } else {
-          throw new Error(`Could not find step`);
+          throw new Error("Could not find step");
         }
       }
     }
@@ -44,7 +44,7 @@ export class StepMocker {
     jobId: string,
     step: StepIdentifier
   ): GithubWorkflowStep | undefined {
-    return workflow.jobs[jobId]?.steps.find((s) => {
+    return workflow.jobs[jobId]?.steps.find(s => {
       if (isStepIdentifierUsingId(step)) {
         return step.id === s.id;
       }
@@ -83,7 +83,7 @@ export class StepMocker {
     return parse(readFileSync(location, "utf8"));
   }
 
-  private async writeWorkflowFile(location: string, data: any) {
+  private async writeWorkflowFile(location: string, data: unknown) {
     return writeFileSync(location, stringify(data), "utf8");
   }
 }

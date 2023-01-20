@@ -6,17 +6,17 @@ import { networkInterfaces } from "os";
 import internal from "stream";
 
 export class ForwardProxy {
-  private apis: ResponseMocker<any, any>[];
+  private apis: ResponseMocker<unknown, number>[];
   private app: express.Express;
   private server: http.Server;
   private logger: (msg: string) => void;
   private currentConnections: Record<number, internal.Duplex>;
   private currentSocketId: number;
 
-  constructor(apis: ResponseMocker<any, any>[], verbose: boolean = false) {
+  constructor(apis: ResponseMocker<unknown, number>[], verbose = false) {
     this.apis = apis;
     this.app = express();
-    this.logger = verbose ? console.log : (_msg) => undefined;
+    this.logger = verbose ? console.log : _msg => undefined;
     this.server = http.createServer(this.app);
     this.currentConnections = {};
     this.currentSocketId = 0;
@@ -56,13 +56,13 @@ export class ForwardProxy {
       if (!this.server.listening) {
         reject(new Error("Server has not been started"));
       } else {
-        this.server.close((err) => {
+        this.server.close(err => {
           if (err) {
             reject(err);
           }
         });
 
-        Object.values(this.currentConnections).forEach((socket) =>
+        Object.values(this.currentConnections).forEach(socket =>
           socket.destroy()
         );
         resolve();
@@ -77,9 +77,9 @@ export class ForwardProxy {
    */
   private getIp() {
     const nics = networkInterfaces();
-    let publicIps = Object.values(nics).reduce((prev, current) => {
+    const publicIps = Object.values(nics).reduce((prev, current) => {
       prev?.push(
-        ...(current?.filter((c) => !c.internal && c.family === "IPv4") ?? [])
+        ...(current?.filter(c => !c.internal && c.family === "IPv4") ?? [])
       );
       return prev;
     }, []);
@@ -95,7 +95,7 @@ export class ForwardProxy {
     const logger = this.logger;
 
     // keep track of connected sockets for clean up
-    this.server.on("connection", (socket) => {
+    this.server.on("connection", socket => {
       const socketId = this.currentSocketId;
       socket.on("close", () => {
         delete this.currentConnections[socketId];
@@ -124,7 +124,7 @@ export class ForwardProxy {
     });
 
     // mock all apis
-    this.apis.forEach((api) => api.reply());
+    this.apis.forEach(api => api.reply());
 
     // forward the intercepted api call
     this.app.all("/*", function (req, res) {
@@ -143,10 +143,10 @@ export class ForwardProxy {
 
       request.on("response", function (response) {
         // set status code
-        if (response.statusCode) res.status(response.statusCode);
+        if (response.statusCode) {res.status(response.statusCode);}
 
         // set headers
-        if (response.headers) res.set(response.headers);
+        if (response.headers) {res.set(response.headers);}
 
         response.pipe(res);
       });
