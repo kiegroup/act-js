@@ -17,6 +17,7 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
   - [Run a job](#run-a-job)
     - [Using job id](#using-job-id)
     - [Using event name](#using-event-name)
+    - [Using event name and job id](#using-event-name-and-job-id)
     - [Mocking apis during the run](#mocking-apis-during-the-run)
     - [Mocking steps](#mocking-steps)
     - [Run result](#run-result)
@@ -267,6 +268,18 @@ result = await act
   .secret("secret1", "value1")
   .secret("secret2", "value2")
   .runJob("pull_request");
+```
+
+#### Using event name and job id
+
+You can trigger a workflow using an event name and job id. Equivalent of running `act event_name -j job_id`.
+
+It returns an array of `Job` outputs. Described [below](#run-result)
+
+```typescript
+const act = new Act();
+
+let result = await act.runEventAndJob("pull_request", "jobId");
 ```
 
 #### Mocking apis during the run
