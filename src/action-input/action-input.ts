@@ -10,12 +10,8 @@ export class ActionInput {
     this.event = event;
   }
 
-  set(key: string, val: string) {
-    this.input.map.set(key, val);
-  }
-
-  delete(key: string) {
-    this.input.map.delete(key);
+  get map() {
+    return this.input.map;
   }
 
   toActArguments() {

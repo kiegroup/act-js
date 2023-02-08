@@ -89,12 +89,17 @@ export class Act {
   }
 
   setInput(key: string, val: string) {
-    this.input.set(key, val);
+    this.input.map.set(key, val);
     return this;
   }
 
   deleteInput(key: string) {
-    this.input.delete(key);
+    this.input.map.delete(key);
+    return this;
+  }
+
+  clearInput() {
+    this.input.map.clear();
     return this;
   }
 

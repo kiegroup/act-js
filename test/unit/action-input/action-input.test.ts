@@ -14,7 +14,7 @@ describe("toActArguments", () => {
       },
     };
 
-    input.set("INPUT1", "value1");
+    input.map.set("INPUT1", "value1");
     expect(input.toActArguments()).toStrictEqual([]);
     expect(event.event).toStrictEqual({
       pull_request: {
@@ -31,8 +31,8 @@ describe("toActArguments", () => {
   test("event payload is not defined", () => {
     const event = new ActionEvent();
     const input = new ActionInput(event);
-    input.set("INPUT1", "value1");
-    input.set("INPUT2", "value2");
+    input.map.set("INPUT1", "value1");
+    input.map.set("INPUT2", "value2");
     expect(input.toActArguments()).toStrictEqual([
       "--input",
       "INPUT1=value1",
