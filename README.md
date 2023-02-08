@@ -11,6 +11,7 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
   - [Current working directory](#current-working-directory)
   - [Secrets](#secrets)
   - [Env](#env)
+  - [Input](#input)
   - [Event payload](#event-payload)
   - [List workflows](#list-workflows)
   - [Run a job](#run-a-job)
@@ -130,6 +131,29 @@ act.deleteEnv("env1");
 
 // you clear all the envs that you had previously defined
 act.clearEnv();
+```
+
+### Input
+
+You can define github action input that will be used by `act` when you execute a run.
+
+```typescript
+let act = new Act();
+
+// setInput returns back the object
+act = act.setInput("input1", "value1");
+
+// you can chain your setInputs
+act
+  .setEnv("input1", "value1")
+  .setEnv("input2", "value2")
+  .setEnv("input3", "value3")
+
+// you can delete an input
+act.deleteInput("input1");
+
+// you clear all the inputs that you had previously defined
+act.clearInput();
 ```
 
 ### Event payload
