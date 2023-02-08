@@ -148,6 +148,14 @@ export class Act {
     return this.run([event], opts);
   }
 
+  async runEventAndJob(event: string, jobId: string, opts?: RunOpts): Promise<Step[]> {
+    await this.handleStepMocking(
+      workflow => workflow.events.includes(event) && workflow.jobId === jobId,
+      opts
+    );
+    return this.run([event, "-j", jobId], opts);
+  }
+
   private async handleStepMocking(
     filter: (workflow: Workflow) => boolean,
     opts?: RunOpts

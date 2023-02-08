@@ -276,13 +276,34 @@ describe("run", () => {
     ]);
   });
 
-  test("run with event json and input", async () => {
+  test("run with input", async () => {
     const act = new Act();
     const output = await act
       .setInput("some_input", "some_input")
-      .runEvent("workflow_dispatch", { workflowFile: resources });
+      .runEventAndJob("workflow_dispatch", "input", { workflowFile: resources });
 
     expect(output).toMatchObject([
+      {
+        name: "Main input",
+        status: 0,
+        output: "some_input",
+      },
+    ]);
+  });
+
+  test("run with input and event json", async () => {
+    const act = new Act();
+    const output = await act
+      .setInput("some_input", "some_input")
+      .setEvent({ some_event: "some_event" })
+      .runEventAndJob("workflow_dispatch", "event-and-input", { workflowFile: resources });
+
+    expect(output).toMatchObject([
+      {
+        name: "Main event",
+        status: 0,
+        output: "some_event",
+      },
       {
         name: "Main input",
         status: 0,
