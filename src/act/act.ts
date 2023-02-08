@@ -11,6 +11,7 @@ import { ActionEvent } from "@aj/action-event/action-event";
 import { EventJSON } from "@aj/action-event/action-event.types";
 import { writeFile } from "fs/promises";
 import { OutputParser } from "@aj/output-parser/output-parser";
+import { ActionInput } from "@aj/action-input/action-input";
 
 export class Act {
   private secrets: ArgumentMap;
@@ -18,6 +19,7 @@ export class Act {
   private workflowFile: string;
   private env: ArgumentMap;
   private event: ActionEvent;
+  private input: ActionInput;
 
   constructor(cwd?: string, workflowFile?: string, defaultImageSize?: string) {
     this.secrets = new ArgumentMap("-s");
@@ -25,6 +27,7 @@ export class Act {
     this.workflowFile = workflowFile ?? this.cwd;
     this.env = new ArgumentMap("--env");
     this.event = new ActionEvent();
+    this.input = new ActionInput(this.event);
     this.setDefaultImage(defaultImageSize);
     this.setGithubStepSummary("/dev/stdout");
   }
@@ -82,6 +85,21 @@ export class Act {
 
   setEvent(event: EventJSON) {
     this.event.event = event;
+    return this;
+  }
+
+  setInput(key: string, val: string) {
+    this.input.map.set(key, val);
+    return this;
+  }
+
+  deleteInput(key: string) {
+    this.input.map.delete(key);
+    return this;
+  }
+
+  clearInput() {
+    this.input.map.clear();
     return this;
   }
 
@@ -223,6 +241,7 @@ export class Act {
     const { cwd, actArguments, proxy } = await this.parseRunOpts(opts);
     const env = this.env.toActArguments();
     const secrets = this.secrets.toActArguments();
+    const input = this.input.toActArguments();
     const event = await this.event.toActArguments();
 
     const { data, error } = await this.act(
@@ -230,6 +249,7 @@ export class Act {
       ...cmd,
       ...secrets,
       ...env,
+      ...input,
       ...event,
       ...actArguments
     );
