@@ -145,9 +145,9 @@ act = act.setInput("input1", "value1");
 
 // you can chain your setInputs
 act
-  .setEnv("input1", "value1")
-  .setEnv("input2", "value2")
-  .setEnv("input3", "value3")
+  .setInput("input1", "value1")
+  .setInput("input2", "value2")
+  .setInput("input3", "value3")
 
 // you can delete an input
 act.deleteInput("input1");
