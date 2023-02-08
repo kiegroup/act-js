@@ -1,0 +1,16 @@
+name: Input
+
+on:
+  workflow_dispatch:
+    inputs:
+      some_input:
+        default: 'world'
+        required: false
+        type: string
+
+jobs:
+  input:
+    runs-on: ubuntu-latest
+    steps:
+      - name: input
+        run: echo "${{ inputs.some_input }}"

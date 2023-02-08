@@ -275,6 +275,21 @@ describe("run", () => {
       },
     ]);
   });
+
+  test("run with event json and input", async () => {
+    const act = new Act();
+    const output = await act
+      .setInput("some_input", "some_input")
+      .runEvent("workflow_dispatch", { workflowFile: resources });
+
+    expect(output).toMatchObject([
+      {
+        name: "Main input",
+        status: 0,
+        output: "some_input",
+      },
+    ]);
+  });
 });
 
 describe("initialization", () => {
