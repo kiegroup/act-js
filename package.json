@@ -1,6 +1,6 @@
 {
   "name": "@kie/act-js",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "nodejs wrapper for nektos/act",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -26,7 +26,7 @@
     "nektos/act"
   ],
   "scripts": {
-    "prebuild": "./scripts/act.sh 0.2.40",
+    "prebuild": "./scripts/act.sh 0.2.43",
     "build": "tsc && tsc-alias",
     "postbuild": "cp -r ./bin ./build",
     "test": "jest unit/",
