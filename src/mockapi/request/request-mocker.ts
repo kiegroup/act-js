@@ -2,7 +2,7 @@ import { EndpointDetails, RequestMocker } from "@kie/mock-github";
 import { MockapiResponseMocker } from "@aj/mockapi/response/response-mocker";
 
 export class MockapiRequestMocker extends RequestMocker {
-  constructor(baseUrl: string, endpointDetails: EndpointDetails) {
+  constructor(baseUrl: string, endpointDetails: EndpointDetails, allowUnmocked = false) {
     super(baseUrl, endpointDetails);
 
     // need to bind the instance context to the function. otherwise it is lost during method generation
@@ -15,7 +15,8 @@ export class MockapiRequestMocker extends RequestMocker {
       path,
       this.endpointDetails.method,
       query,
-      requestBody
+      requestBody,
+      this.allowUnmocked
     );
   }
 }

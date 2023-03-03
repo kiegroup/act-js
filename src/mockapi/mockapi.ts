@@ -7,10 +7,12 @@ import { MockapiRequestMocker } from "@aj/mockapi/request/request-mocker";
 export class Mockapi {
   private apiSchema: API;
   private _mock: MockapiMethod;
+  private allowUnmocked: boolean;
 
-  constructor(apiSchema: string | API) {
+  constructor(apiSchema: string | API, allowUnmocked = false) {
     this.apiSchema = this.validateAPISchema(apiSchema);
     this._mock = this.apiSchemaToMethod();
+    this.allowUnmocked = allowUnmocked;
   }
 
   /**
@@ -37,7 +39,8 @@ export class Mockapi {
         for (const methodName in this.apiSchema[apiName]["endpoints"][scope]) {
           methods[apiName][scope][methodName] = new MockapiRequestMocker(
             this.apiSchema[apiName]["baseUrl"],
-            this.apiSchema[apiName]["endpoints"][scope][methodName]
+            this.apiSchema[apiName]["endpoints"][scope][methodName],
+            this.allowUnmocked
           ).request;
         }
       }
