@@ -110,17 +110,17 @@ describe("http", () => {
     const proxy = new ForwardProxy([
       mockapi.mock.google.root
         .get()
-        .setResponse({ status: 200, data: { msg: "mocked_response" } }),
+        .setResponse({ status: 400, data: { msg: "mocked_response" } }),
     ]);
     const ip = await proxy.start();
     process.env["http_proxy"] = `http://${ip}`;
     process.env["https_proxy"] = `http://${ip}`;
 
-    await expect(
-      axios.get("http://redhat.com/", {
-        maxRedirects: 0,
-      })
-    ).rejects.toThrowError("Request failed with status code 301");
+    const { status } = await axios.get("http://redhat.com/");
+
+    expect(
+      status
+    ).toBe(200);
     await proxy.stop();
   });
 });
