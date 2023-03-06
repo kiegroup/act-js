@@ -3,7 +3,7 @@ import { MockapiResponseMocker } from "@aj/mockapi/response/response-mocker";
 
 export class MockapiRequestMocker extends RequestMocker {
   constructor(baseUrl: string, endpointDetails: EndpointDetails, allowUnmocked = false) {
-    super(baseUrl, endpointDetails);
+    super(baseUrl, endpointDetails, allowUnmocked);
 
     // need to bind the instance context to the function. otherwise it is lost during method generation
     this.request = this.request.bind(this);

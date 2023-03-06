@@ -1,6 +1,7 @@
 import net from "net";
 import express from "express";
-import http from "http";
+import { http } from "follow-redirects";
+import { Server } from "http";
 import { ResponseMocker } from "@kie/mock-github";
 import { networkInterfaces } from "os";
 import internal from "stream";
@@ -8,7 +9,7 @@ import internal from "stream";
 export class ForwardProxy {
   private apis: ResponseMocker<unknown, number>[];
   private app: express.Express;
-  private server: http.Server;
+  private server: Server;
   private logger: (msg: string) => void;
   private currentConnections: Record<number, internal.Duplex>;
   private currentSocketId: number;
@@ -128,10 +129,9 @@ export class ForwardProxy {
 
     // forward the intercepted api call
     this.app.all("/*", function (req, res) {
-      logger(req.baseUrl + req.path);
       const opts = {
         host: req.hostname,
-        path: req.path,
+        path: req.path + new URL(req.url).search,
         method: req.method,
         headers: req.headers,
         agent: false,
