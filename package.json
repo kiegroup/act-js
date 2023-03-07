@@ -1,6 +1,6 @@
 {
   "name": "@kie/act-js",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "nodejs wrapper for nektos/act",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -58,7 +58,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@kie/mock-github": "^1.0.1",
+    "@kie/mock-github": "^1.0.2",
     "ajv": "^8.12.0",
     "express": "^4.18.1",
     "follow-redirects": "^1.15.2",
