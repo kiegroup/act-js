@@ -202,7 +202,7 @@ export class Act {
       });
 
       childProcess.on("close", code => {
-        fsStream?.close()
+        fsStream?.close();
         if (
           code === null ||
           /Cannot connect to the Docker daemon at .+/.test(data)
