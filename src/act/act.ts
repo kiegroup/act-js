@@ -1,7 +1,8 @@
 import { spawn } from "child_process";
 import { RunOpts, Step, Workflow } from "@aj/act/act.type";
 import { ACT_BINARY } from "@aj/act/act.constants";
-import { existsSync, writeFileSync } from "fs";
+import { existsSync, writeFileSync, WriteStream } from "fs";
+import { open } from "fs/promises";
 import path from "path";
 import { homedir } from "os";
 import { ForwardProxy } from "@aj/proxy/proxy";
@@ -9,7 +10,6 @@ import { ArgumentMap } from "@aj/map/argument-map";
 import { StepMocker } from "@aj/step-mocker/step-mocker";
 import { ActionEvent } from "@aj/action-event/action-event";
 import { EventJSON } from "@aj/action-event/action-event.types";
-import { writeFile } from "fs/promises";
 import { OutputParser } from "@aj/output-parser/output-parser";
 import { ActionInput } from "@aj/action-input/action-input";
 
@@ -117,7 +117,7 @@ export class Act {
     workflowFile: string = this.workflowFile
   ): Promise<Workflow[]> {
     const args = ["-W", workflowFile, "-l"];
-    const { data } = await this.act(cwd, ...(event ? [event, ...args] : args));
+    const data = await this.act(cwd, undefined, ...(event ? [event, ...args] : args));
 
     return data
       .split("\n")
@@ -178,30 +178,38 @@ export class Act {
   }
 
   // wrapper around the act cli command
-  private act(
+  private async act(
     cwd: string,
+    logFile: string | undefined,
     ...args: string[]
-  ): Promise<{ data: string; error: string }> {
+  ): Promise<string> {
+    const fsStream = await this.logRawOutput(logFile);
     return new Promise((resolve, reject) => {
       // do not use spawnSync. will cause a deadlock when used with proxy settings
       const childProcess = spawn(ACT_BINARY, ["-W", cwd, ...args], { cwd });
       let data = "";
-      let error = "";
+
       childProcess.stdout.on("data", chunk => {
-        data += chunk.toString();
+        const output = chunk.toString();
+        data += output;
+        fsStream?.write(output);
       });
+
       childProcess.stderr.on("data", chunk => {
-        error += chunk.toString();
+        const output = chunk.toString();
+        data += output;
+        fsStream?.write(output);
       });
 
       childProcess.on("close", code => {
+        fsStream?.close();
         if (
           code === null ||
-          /Cannot connect to the Docker daemon at .+/.test(error)
+          /Cannot connect to the Docker daemon at .+/.test(data)
         ) {
-          reject(error);
+          reject(data);
         } else {
-          resolve({ data, error });
+          resolve(data);
         }
       });
     });
@@ -252,8 +260,9 @@ export class Act {
     const input = this.input.toActArguments();
     const event = await this.event.toActArguments();
 
-    const { data, error } = await this.act(
+    const data = await this.act(
       cwd,
+      opts?.logFile,
       ...cmd,
       ...secrets,
       ...env,
@@ -264,11 +273,8 @@ export class Act {
 
     const promises = [
       this.event.removeEvent(),
-      this.logRawOutput(data + "\nErrors" + error, opts?.logFile),
+      ...(proxy ? [proxy.stop()] : [])
     ];
-    if (proxy) {
-      promises.push(proxy.stop());
-    }
 
     const result = new OutputParser(data).parseOutput();
     await Promise.all(promises);
@@ -304,9 +310,10 @@ export class Act {
     }
   }
 
-  private async logRawOutput(output: string, logFile?: string) {
+  private async logRawOutput(logFile?: string): Promise<WriteStream | undefined> {
     if (logFile) {
-      return writeFile(logFile, output);
+      const filehandle = await open(logFile, "w");
+      return filehandle.createWriteStream();
     }
   }
 }
