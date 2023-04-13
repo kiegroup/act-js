@@ -169,7 +169,7 @@ export class Act {
         workflowNames.map(name => {
           const stepMocker = new StepMocker(
             name.workflowFile,
-            opts.workflowFile ?? this.workflowFile
+            opts.cwd ?? this.cwd
           );
           return stepMocker.mock(opts.mockSteps!);
         })
