@@ -26,6 +26,7 @@
     "nektos/act"
   ],
   "scripts": {
+    "preinstall": "npm run prebuild",
     "prebuild": "./scripts/act.sh 0.2.43",
     "build": "tsc && tsc-alias",
     "postbuild": "cp -r ./bin ./build",
