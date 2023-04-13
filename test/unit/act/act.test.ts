@@ -146,10 +146,14 @@ describe("run", () => {
     ]);
   });
 
-  test("run job with mocked step", async () => {
+  test.each([
+    ["no specific workflow file", undefined],
+    ["specific workflow file", path.join(resources, "push1.yml")],
+  ])("run job with mocked step: %p", async (_title: string, workflowFile: string | undefined) => {
     const original = fs.readFileSync(path.join(resources, "push1.yml"), "utf8");
     const act = new Act(resources);
     const output = await act.runJob("push1", {
+      workflowFile,
       mockSteps: {
         push1: [
           {
