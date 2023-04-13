@@ -148,7 +148,7 @@ describe("run", () => {
 
   test("run job with mocked step", async () => {
     const original = fs.readFileSync(path.join(resources, "push1.yml"), "utf8");
-    const act = new Act(__dirname, resources);
+    const act = new Act(resources);
     const output = await act.runJob("push1", {
       mockSteps: {
         push1: [
@@ -185,12 +185,15 @@ describe("run", () => {
     fs.writeFileSync(path.join(resources, "push1.yml"), original);
   });
 
-  test("run event with mocked step", async () => {
+  test.each([
+    ["no specific workflow file", undefined],
+    ["specific workflow file", path.join(resources, "pull_request.yml")],
+  ])("run event with mocked step: %p", async (_title: string, workflowFile: string | undefined) => {
     const original = fs.readFileSync(
       path.join(resources, "pull_request.yml"),
       "utf8"
     );
-    const act = new Act(undefined, resources);
+    const act = new Act(resources, workflowFile);
     const output = await act.runEvent("pull_request", {
       mockSteps: {
         pr: [
