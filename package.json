@@ -74,5 +74,8 @@
   },
   "lint-staged": {
     "*.ts": "npm run lint:fix"
+  },
+  "engines": {
+    "node": ">= 16.0.0"
   }
 }
