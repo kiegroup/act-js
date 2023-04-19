@@ -6,10 +6,10 @@ const fs = require("fs");
 const path = require("path");
 const tar = require("tar");
 const zlib = require("zlib");
-const { https } = require('follow-redirects');
+const { https } = require("follow-redirects");
 
 // version
-const VERSION = process.argv[2] ?? process.env.ACT_VERSION
+const VERSION = process.argv[2] ?? process.env.ACT_VERSION;
 
 // Mapping between Node's `process.platform` to Golang's
 const PLATFORM_MAPPING = {
@@ -43,7 +43,15 @@ const readPackageJson = async () => {
   return JSON.parse(contents);
 };
 
-const getDownloadUrlAndBinPath = () => {
+const getBinPath = () => {
+  let binPath = path.join("bin", "act");
+  if (process.platform == "win32") {
+    binPath += ".exe";
+  }
+  return binPath;
+};
+
+const getDownloadUrl = () => {
   const platform = PLATFORM_MAPPING[process.platform];
   if (!platform) {
     throw Error(
@@ -54,9 +62,9 @@ const getDownloadUrlAndBinPath = () => {
   let arch = PLATFORM_TO_ARCH_MAPPING[platform][process.arch];
 
   // see: https://github.com/nodejs/node/issues/9491
-  const armVersion = process.config.variables.arm_version
+  const armVersion = process.config.variables.arm_version;
   if (arch === "arm") {
-    arch += armVersion
+    arch += armVersion;
   }
 
   if (!arch) {
@@ -68,14 +76,63 @@ const getDownloadUrlAndBinPath = () => {
   // Build the download url from package.json
   const pkgName = "act";
   const repo = "nektos/act";
-  const url = `https://github.com/${repo}/releases/download/v${VERSION}/${pkgName}_${platform}_${arch}.tar.gz`;
+  let extension = "tar.gz";
 
-  let binPath = path.join("bin", "act");
-  if (platform == "Windows") {
-    binPath += ".exe";
+  if (process.platform == "win32") {
+    extension = "zip";
   }
 
-  return { binPath, url };
+  return `https://github.com/${repo}/releases/download/v${VERSION}/${pkgName}_${platform}_${arch}.${extension}`;
+};
+
+const downloadWindows = async (url, binPath) => {
+  // we have unzip for windows
+  const unzip = zlib.createUnzip();
+  const binDir = path.dirname(binPath);
+  await fs.promises.mkdir(binDir, { recursive: true });
+  const dest = fs.createWriteStream(binPath);
+
+  console.info("Downloading", url);
+  https
+    .get(url, (res) => {
+      res.pipe(unzip).pipe(dest);
+    })
+    .on("error", (err) => {
+      console.log("Error: ", err.message);
+      throw "Unable to install act. Set ACT_BINARY enn variable to point to the path of your locally installed act";
+    });
+
+  await new Promise((resolve, reject) => {
+    unzip.on("error", reject);
+    dest.on("error", reject);
+    dest.on("end", () => resolve());
+  });
+};
+
+const downloadOthers = async (url, binPath) => {
+  // First we will Un-GZip, then we will untar.
+  const ungz = zlib.createGunzip();
+  const binName = path.basename(binPath);
+  const binDir = path.dirname(binPath);
+  await fs.promises.mkdir(binDir, { recursive: true });
+  const untar = tar.x({ cwd: binDir }, [binName]);
+
+  console.info("Downloading", url);
+
+  https
+    .get(url, (res) => {
+      res.pipe(ungz).pipe(untar);
+    })
+    .on("error", (err) => {
+      console.log("Error: ", err.message);
+      throw "Unable to install act. Set ACT_BINARY enn variable to point to the path of your locally installed act";
+    });
+
+  await new Promise((resolve, reject) => {
+    ungz.on("error", reject);
+    untar.on("error", reject);
+    untar.on("end", () => resolve());
+  });
 };
 
 /**
@@ -95,28 +152,14 @@ async function main() {
   }
 
   const pkg = await readPackageJson();
-  const { binPath, url } = getDownloadUrlAndBinPath();
-  const binDir = path.dirname(binPath);
-  await fs.promises.mkdir(binDir, { recursive: true });
+  const binPath = getBinPath();
+  const url = getDownloadUrl();
 
-  // First we will Un-GZip, then we will untar.
-  const ungz = zlib.createGunzip();
-  const binName = path.basename(binPath);
-  const untar = tar.x({ cwd: binDir }, [binName]);
-
-  console.info("Downloading", url);
-
-  https.get(url, res => {
-    res.pipe(ungz).pipe(untar)
-  }).on('error', err => {
-    console.log('Error: ', err.message);
-    throw "Unable to install act. Set ACT_BINARY enn variable to point to the path of your locally installed act"
-  });
-
-  await new Promise((resolve, reject) => {
-    untar.on("error", reject);
-    untar.on("end", () => resolve());
-  });
+  if (process.platform === "win32") {
+    await downloadWindows(url, binPath);
+  } else {
+    await downloadOthers(url, binPath);
+  }
 
   // Link the binaries in postinstall to support yarn
   await binLinks({
