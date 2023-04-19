@@ -5,10 +5,9 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "bin": {
-    "act-js": "build/bin/act"
+    "act-js": "bin/act"
   },
   "files": [
-    "build/bin",
     "build/src"
   ],
   "repository": {
@@ -26,10 +25,8 @@
     "nektos/act"
   ],
   "scripts": {
-    "preinstall": "npm run prebuild",
-    "prebuild": "./scripts/act.sh 0.2.43",
+    "postinstall": "node scripts/postinstall.js 0.2.43",
     "build": "tsc && tsc-alias",
-    "postbuild": "cp -r ./bin ./build",
     "test": "jest unit/",
     "test:report": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
     "test:ci": "jest ./test/ci/",
@@ -65,8 +62,10 @@
   "dependencies": {
     "@kie/mock-github": "^1.0.3",
     "ajv": "^8.12.0",
+    "bin-links": "^4.0.1",
     "express": "^4.18.1",
     "follow-redirects": "^1.15.2",
+    "tar": "^6.1.13",
     "yaml": "^2.1.3"
   },
   "jestSonar": {
