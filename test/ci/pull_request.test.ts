@@ -83,24 +83,6 @@ test("pull request workflow", async () => {
       name: "Post actions/setup-node@v3",
       output: "",
       status: 0,
-    },
-    {
-      name: "Main actions/checkout@v3",
-      status: 0,
-      output: "",
-    },
-    {
-      name: "Main actions/setup-node@v3",
-      output: expect.any(String),
-      status: 0,
-    },
-    { name: "Main Install packages", status: 0, output: expect.any(String) },
-    { name: "Main Install act", status: 0, output: expect.any(String) },
-    { name: "Main Test", status: 0, output: "ran tests" },
-    {
-      name: "Post actions/setup-node@v3",
-      output: "",
-      status: 0,
-    },
+    }
   ]);
 });

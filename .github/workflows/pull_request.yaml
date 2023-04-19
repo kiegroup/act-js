@@ -14,7 +14,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        node-version: [14.x, 16.x]
+        node-version: [16.x]
         os: [ubuntu-latest]
       fail-fast: true
     runs-on: ${{ matrix.os }}
