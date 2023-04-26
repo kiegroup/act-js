@@ -28,8 +28,10 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.js 0.2.43",
     "build": "tsc && tsc-alias",
+    "pretest": "npm run postinstall && cp -r build/bin bin",
     "test": "jest unit/",
     "test:report": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
+    "pretest:ci": "npm run pretest",
     "test:ci": "jest ./test/ci/",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

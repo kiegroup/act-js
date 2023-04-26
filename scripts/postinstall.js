@@ -45,7 +45,7 @@ const readPackageJson = async () => {
 };
 
 const getBinPath = () => {
-  let binPath = path.join("bin", "act");
+  let binPath = path.join("build", "bin", "act");
   if (process.platform == "win32") {
     binPath += ".exe";
   }
