@@ -46,7 +46,7 @@ describe("list", () => {
   });
 });
 
-describe("run", () => {
+(process.platform === "linux" ? describe : describe.skip)("run", () => {
   test("run with job", async () => {
     const act = new Act();
     const output = await act
