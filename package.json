@@ -1,6 +1,6 @@
 {
   "name": "@kie/act-js",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "nodejs wrapper for nektos/act",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
