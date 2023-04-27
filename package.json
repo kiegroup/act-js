@@ -1,15 +1,15 @@
 {
   "name": "@kie/act-js",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "nodejs wrapper for nektos/act",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "bin": {
-    "act-js": "build/bin/act"
+    "act-js": "bin/act"
   },
   "files": [
-    "build/bin",
-    "build/src"
+    "build/src",
+    "scripts"
   ],
   "repository": {
     "type": "git",
@@ -26,12 +26,12 @@
     "nektos/act"
   ],
   "scripts": {
-    "preinstall": "npm run prebuild",
-    "prebuild": "./scripts/act.sh 0.2.43",
+    "postinstall": "node scripts/postinstall.js 0.2.43",
     "build": "tsc && tsc-alias",
-    "postbuild": "cp -r ./bin ./build",
+    "pretest": "npm run postinstall && cp -r build/bin bin",
     "test": "jest unit/",
     "test:report": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
+    "pretest:ci": "npm run pretest",
     "test:ci": "jest ./test/ci/",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -64,9 +64,12 @@
   },
   "dependencies": {
     "@kie/mock-github": "^1.0.3",
+    "adm-zip": "^0.5.10",
     "ajv": "^8.12.0",
+    "bin-links": "^4.0.1",
     "express": "^4.18.1",
     "follow-redirects": "^1.15.2",
+    "tar": "^6.1.13",
     "yaml": "^2.1.3"
   },
   "jestSonar": {

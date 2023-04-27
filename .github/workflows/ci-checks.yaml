@@ -14,5 +14,4 @@ jobs:
         with:
           node-version: 16
       - run: npm install
-      - run: npm run prebuild
       - run: npm run test:ci

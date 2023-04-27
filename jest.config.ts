@@ -18,7 +18,7 @@ const jestConfig: Config.InitialOptions = {
   ],
   testLocationInResults: true,
   testResultsProcessor: "jest-sonar-reporter",
-  testTimeout: 100000,
+  testTimeout: 120000,
   testPathIgnorePatterns: ["<rootDir>/build"],
 };
 export default jestConfig;
