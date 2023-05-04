@@ -26,9 +26,9 @@
     "nektos/act"
   ],
   "scripts": {
-    "postinstall": "node scripts/postinstall.js 0.2.43",
+    "postinstall": "node scripts/postinstall.js 0.2.45",
     "build": "tsc && tsc-alias",
-    "pretest": "npm run postinstall && cp -r build/bin bin",
+    "pretest": "npm run postinstall && mkdir -p bin && cp build/bin/* bin/",
     "test": "jest unit/",
     "test:report": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
     "pretest:ci": "npm run pretest",
