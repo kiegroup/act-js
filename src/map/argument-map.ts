@@ -1,9 +1,12 @@
-export class ArgumentMap {
-  private _map: Map<string, string>;
+export class ArgumentMap<T extends string | string[]> {
+  private _map: Map<string, T>;
   private prefix: string;
-  constructor(prefix: string) {
-    this._map = new Map<string, string>();
+  private delimiter: string;
+
+  constructor(prefix: string, delimiter = "=") {
+    this._map = new Map<string, T>();
     this.prefix = prefix;
+    this.delimiter = delimiter;
   }
 
   get map() {
@@ -17,7 +20,13 @@ export class ArgumentMap {
   toActArguments(): string[] {
     const args = [];
     for (const [key, val] of this._map.entries()) {
-      args.push(this.prefix, `${key}=${val}`);
+      if (Array.isArray(val)) {
+        val.forEach(v =>
+          args.push(this.prefix, `${key}${this.delimiter}${v}`)
+        );
+      } else {
+        args.push(this.prefix, `${key}${this.delimiter}${val}`);
+      }
     }
     return args;
   }
