@@ -335,6 +335,17 @@ describe("list", () => {
       { name: "Main Test node-version", status: 0, output: "" }
     ]);
   });
+
+  test("run with platforms", async () => {
+    const act = new Act();
+    const output = await act
+      .setPlatforms("macos-latest", "-self-hosted")
+      .runJob("platforms-test", { workflowFile: resources });
+    
+    expect(output).toStrictEqual([
+      { name: "Main Test platforms", status: 0, output: "should be executed" },
+    ]);
+  });
 });
 
 describe("initialization", () => {

@@ -1,0 +1,10 @@
+name: Platforms
+
+on: push
+
+jobs:
+  platforms-test:
+    runs-on: macos-latest
+    steps:
+      - name: Test platforms
+        run: echo "should be executed"

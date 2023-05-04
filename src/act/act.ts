@@ -19,6 +19,7 @@ export class Act {
   private workflowFile: string;
   private env: ArgumentMap<string>;
   private matrix: ArgumentMap<string[]>;
+  private platforms: ArgumentMap<string>;
   private event: ActionEvent;
   private input: ActionInput;
 
@@ -28,6 +29,7 @@ export class Act {
     this.workflowFile = workflowFile ?? this.cwd;
     this.env = new ArgumentMap<string>("--env");
     this.matrix = new ArgumentMap<string[]>("--matrix", ":");
+    this.platforms = new ArgumentMap<string>("--platform");
     this.event = new ActionEvent();
     this.input = new ActionInput(this.event);
     this.setDefaultImage(defaultImageSize);
@@ -117,6 +119,21 @@ export class Act {
 
   clearMatrix() {
     this.matrix.map.clear();
+    return this;
+  }
+
+  setPlatforms(key: string, val: string) {
+    this.platforms.map.set(key, val);
+    return this;
+  }
+
+  deletePlatforms(key: string) {
+    this.platforms.map.delete(key);
+    return this;
+  }
+
+  clearPlatforms() {
+    this.platforms.map.clear();
     return this;
   }
 
@@ -287,6 +304,7 @@ export class Act {
     const input = this.input.toActArguments();
     const event = await this.event.toActArguments();
     const matrix = this.matrix.toActArguments();
+    const platforms = this.platforms.toActArguments();
 
     const data = await this.act(
       cwd,
@@ -297,6 +315,7 @@ export class Act {
       ...input,
       ...event,
       ...matrix,
+      ...platforms,
       ...actArguments
     );
 
