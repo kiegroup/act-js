@@ -318,6 +318,21 @@ describe("list", () => {
       },
     ]);
   });
+
+  test("run with matrix", async () => {
+    const act = new Act();
+    const output = await act
+      .setMatrix("os", ["ubuntu-latest"])
+      .setMatrix("node-version", ["14.x", "16.x"])
+      .runJob("matrix-test", { workflowFile: resources, logFile: "matrix.log" });
+    
+    expect(output).toStrictEqual([
+      { name: "Main Test os", status: 0, output: "" },
+      { name: "Main Test node-version", status: 0, output: "" },
+      { name: "Main Test os", status: 0, output: "" },
+      { name: "Main Test node-version", status: 0, output: "" }
+    ]);
+  });
 });
 
 describe("initialization", () => {
