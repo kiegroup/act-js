@@ -1,6 +1,6 @@
 {
   "name": "@kie/act-js",
-  "version": "2.0.8",
+  "version": "0.0.0-development",
   "description": "nodejs wrapper for nektos/act",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -57,6 +57,7 @@
     "lint-staged": "^13.2.1",
     "nock": "^13.3.0",
     "prettier": "^2.7.1",
+    "semantic-release": "^19.0.5",
     "ts-jest": "^28.0.5",
     "ts-node": "^10.8.1",
     "tsc-alias": "^1.7.1",
@@ -77,5 +78,15 @@
   },
   "lint-staged": {
     "*.ts": "npm run lint:fix"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/github"
+    ]
   }
 }
