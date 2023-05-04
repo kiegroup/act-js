@@ -33,3 +33,9 @@ export type RunOpts = {
   mockSteps?: MockStep;
   logFile?: string;
 };
+
+export type ContainerOpts = {
+  containerArchitecture?: string
+  containerDaemonSocket?: string
+  containerOptions?: string;
+}

@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { RunOpts, Step, Workflow } from "@aj/act/act.type";
+import { ContainerOpts, RunOpts, Step, Workflow } from "@aj/act/act.type";
 import { ACT_BINARY } from "@aj/act/act.constants";
 import { existsSync, writeFileSync, WriteStream } from "fs";
 import { open } from "fs/promises";
@@ -22,6 +22,7 @@ export class Act {
   private platforms: ArgumentMap<string>;
   private event: ActionEvent;
   private input: ActionInput;
+  private containerOpts: ContainerOpts;
 
   constructor(cwd?: string, workflowFile?: string, defaultImageSize?: string) {
     this.secrets = new ArgumentMap<string>("-s");
@@ -32,6 +33,7 @@ export class Act {
     this.platforms = new ArgumentMap<string>("--platform");
     this.event = new ActionEvent();
     this.input = new ActionInput(this.event);
+    this.containerOpts = {};
     this.setDefaultImage(defaultImageSize);
     this.setGithubStepSummary("/dev/stdout");
   }
@@ -134,6 +136,26 @@ export class Act {
 
   clearPlatforms() {
     this.platforms.map.clear();
+    return this;
+  }
+
+  setContainerArchitecture(val: string | undefined) {
+    this.containerOpts.containerArchitecture = val;
+    return this;
+  }
+
+  setContainerDaemonSocket(val: string | undefined) {
+    this.containerOpts.containerDaemonSocket = val;
+    return this;
+  }
+
+  setCustomContainerOpts(val: string | undefined) {
+    this.containerOpts.containerOptions = val;
+    return this;
+  }
+
+  clearAllContainerOpts() {
+    this.containerOpts = {};
     return this;
   }
 
@@ -282,6 +304,18 @@ export class Act {
 
     if (opts?.bind) {
       actArguments.push("--bind");
+    }
+
+    if (this.containerOpts.containerArchitecture) {
+      actArguments.push("--container-architecture", this.containerOpts.containerArchitecture);
+    }
+
+    if (this.containerOpts.containerDaemonSocket) {
+      actArguments.push("--container-daemon-socket", this.containerOpts.containerDaemonSocket);
+    }
+
+    if (this.containerOpts.containerOptions) {
+      actArguments.push("--container-options", this.containerOpts.containerOptions);
     }
 
     const cwd = opts?.cwd ?? this.cwd;
