@@ -54,7 +54,7 @@ afterEach(async () => {
 test("pull request workflow", async () => {
 
   const act = new Act(github.repo.getPath("pull_request"));
-  const result = await act.runJob("tests", {
+  const result = await act.setMatrix("os", ["ubuntu-latest"]).runJob("tests", {
     mockSteps: {
       tests: [
         {
@@ -77,7 +77,6 @@ test("pull request workflow", async () => {
       status: 0,
     },
     { name: "Main Install packages", status: 0, output: expect.any(String) },
-    { name: "Main Install act", status: 0, output: expect.any(String) },
     { name: "Main Test", status: 0, output: "ran tests" },
     {
       name: "Post actions/setup-node@v3",
