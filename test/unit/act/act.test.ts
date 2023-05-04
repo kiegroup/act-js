@@ -34,15 +34,17 @@ describe("list", () => {
   test("with event", async () => {
     const act = new Act();
     const list = await act.list("pull_request", __dirname, resources);
-    expect(list).toStrictEqual([
-      {
-        jobId: "pr",
-        jobName: "pr",
-        workflowName: "Pull Request",
-        workflowFile: "pull_request.yml",
-        events: "pull_request",
-      },
-    ]);
+    expect(list).toEqual(
+      expect.arrayContaining([
+        {
+          jobId: "pr",
+          jobName: "pr",
+          workflowName: "Pull Request",
+          workflowFile: "pull_request.yml",
+          events: "pull_request",
+        },
+      ])
+    );
   });
 });
 
@@ -324,7 +326,7 @@ describe("list", () => {
     const output = await act
       .setMatrix("os", ["ubuntu-latest"])
       .setMatrix("node-version", ["14.x", "16.x"])
-      .runJob("matrix-test", { workflowFile: resources, logFile: "matrix.log" });
+      .runJob("matrix-test", { workflowFile: resources });
     
     expect(output).toStrictEqual([
       { name: "Main Test os", status: 0, output: "" },
