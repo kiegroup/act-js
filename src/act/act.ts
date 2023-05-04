@@ -14,18 +14,20 @@ import { OutputParser } from "@aj/output-parser/output-parser";
 import { ActionInput } from "@aj/action-input/action-input";
 
 export class Act {
-  private secrets: ArgumentMap;
+  private secrets: ArgumentMap<string>;
   private cwd: string;
   private workflowFile: string;
-  private env: ArgumentMap;
+  private env: ArgumentMap<string>;
+  private matrix: ArgumentMap<string[]>;
   private event: ActionEvent;
   private input: ActionInput;
 
   constructor(cwd?: string, workflowFile?: string, defaultImageSize?: string) {
-    this.secrets = new ArgumentMap("-s");
+    this.secrets = new ArgumentMap<string>("-s");
     this.cwd = cwd ?? process.cwd();
     this.workflowFile = workflowFile ?? this.cwd;
-    this.env = new ArgumentMap("--env");
+    this.env = new ArgumentMap<string>("--env");
+    this.matrix = new ArgumentMap<string[]>("--matrix", ":");
     this.event = new ActionEvent();
     this.input = new ActionInput(this.event);
     this.setDefaultImage(defaultImageSize);
@@ -100,6 +102,21 @@ export class Act {
 
   clearInput() {
     this.input.map.clear();
+    return this;
+  }
+
+  setMatrix(key: string, val: string[]) {
+    this.matrix.map.set(key, val);
+    return this;
+  }
+
+  deleteMatrix(key: string) {
+    this.matrix.map.delete(key);
+    return this;
+  }
+
+  clearMatrix() {
+    this.matrix.map.clear();
     return this;
   }
 
@@ -269,6 +286,7 @@ export class Act {
     const secrets = this.secrets.toActArguments();
     const input = this.input.toActArguments();
     const event = await this.event.toActArguments();
+    const matrix = this.matrix.toActArguments();
 
     const data = await this.act(
       cwd,
@@ -278,6 +296,7 @@ export class Act {
       ...env,
       ...input,
       ...event,
+      ...matrix,
       ...actArguments
     );
 

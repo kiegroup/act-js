@@ -2,11 +2,11 @@ import { ArgumentMap } from "@aj/map/argument-map";
 import { ActionEvent } from "@aj/action-event/action-event";
 
 export class ActionInput {
-  private input: ArgumentMap;
+  private input: ArgumentMap<string>;
   private event: ActionEvent;
 
   constructor(event: ActionEvent) {
-    this.input = new ArgumentMap("--input");
+    this.input = new ArgumentMap<string>("--input");
     this.event = event;
   }
 
