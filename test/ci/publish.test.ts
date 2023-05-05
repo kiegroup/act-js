@@ -58,8 +58,7 @@ test("publish workflow", async () => {
           mockWith: "echo ran semantic-release"
         }
       ]
-    },
-    logFile: "t.log"
+    }  
   });
 
   expect(result).toMatchObject([
