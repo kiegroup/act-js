@@ -306,6 +306,10 @@ export class Act {
       actArguments.push("--bind");
     }
 
+    if (opts?.verbose) {
+      actArguments.push("--verbose");
+    }
+
     if (this.containerOpts.containerArchitecture) {
       actArguments.push("--container-architecture", this.containerOpts.containerArchitecture);
     }
