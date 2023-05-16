@@ -288,10 +288,9 @@ export class Act {
     let proxy: ForwardProxy | undefined = undefined;
 
     if (opts?.mockApi) {
-      let address: string;
-
       proxy = new ForwardProxy(opts.mockApi);
-      address = await proxy.start();
+
+      const address = await proxy.start();
 
       this.setEnv("http_proxy", `http://${address}`);
       this.setEnv("https_proxy", `http://${address}`);
