@@ -282,11 +282,17 @@ export class Act {
   }
 
   private async parseRunOpts(opts?: RunOpts) {
-    let proxy: ForwardProxy | undefined = undefined;
     const actArguments: string[] = [];
+    const cwd = opts?.cwd ?? this.cwd;
+    const workflowFile = opts?.workflowFile ?? this.workflowFile;
+    let proxy: ForwardProxy | undefined = undefined;
+
     if (opts?.mockApi) {
+      let address: string;
+
       proxy = new ForwardProxy(opts.mockApi);
-      const address = await proxy.start();
+      address = await proxy.start();
+
       this.setEnv("http_proxy", `http://${address}`);
       this.setEnv("https_proxy", `http://${address}`);
       this.setEnv("HTTP_PROXY", `http://${address}`);
@@ -295,10 +301,8 @@ export class Act {
 
     if (opts?.artifactServer) {
       actArguments.push(
-        "--artifact-server-path",
-        opts?.artifactServer.path,
-        "--artifact-server-port",
-        opts?.artifactServer.port
+        "--artifact-server-path", opts?.artifactServer.path,
+        "--artifact-server-port", opts?.artifactServer.port
       );
     }
 
@@ -322,8 +326,6 @@ export class Act {
       actArguments.push("--container-options", this.containerOpts.containerOptions);
     }
 
-    const cwd = opts?.cwd ?? this.cwd;
-    const workflowFile = opts?.workflowFile ?? this.workflowFile;
     actArguments.push("-W", workflowFile);
 
     return { cwd, proxy, actArguments };
