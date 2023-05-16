@@ -8,7 +8,7 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
 - [Configuration](#configuration)
 - [CLI Usage](#cli-usage)
 - [API Usage](#api-usage)
-  - [Current working directory](#current-working-directory)
+  - [Current working directory and Workflow file](#current-working-directory-and-workflow-file)
   - [Secrets](#secrets)
   - [Env](#env)
   - [Input](#input)
@@ -23,14 +23,14 @@ Installs [nektos/act](https://github.com/nektos/act) and provides access to it a
     - [Run result](#run-result)
 - [Mockapi](#mockapi)
   - [Defining a schema](#defining-a-schema)
-  - [Mock an api](#mock-an-api-1)
-    - [Mock the entire endpoint](#mock-the-entire-endpoint-1)
-    - [Mock an endpoint for specific parameter(s)](#mock-an-endpoint-for-specific-parameters-1)
-  - [Replying with a response](#replying-with-a-response-1)
-    - [Reply once](#reply-once-1)
-    - [Reply N times](#reply-n-times-1)
-    - [Chaining responses](#chaining-responses-1)
-  - [Typescript Support](#typescript-support-1)
+  - [Mock an api](#mock-an-api)
+    - [Mock the entire endpoint](#mock-the-entire-endpoint)
+    - [Mock an endpoint for specific parameter(s)](#mock-an-endpoint-for-specific-parameters)
+  - [Replying with a response](#replying-with-a-response)
+    - [Reply once](#reply-once)
+    - [Reply N times](#reply-n-times)
+    - [Chaining responses](#chaining-responses)
+  - [Typescript Support](#typescript-support)
 - [Example with Mock Github](#example-with-mock-github)
 - [Limitations](#limitations)
 - [Version](#version)
@@ -80,7 +80,8 @@ Provides an interface for the [nektos/act](https://github.com/nektos/act/) tool 
 
 You can set the current working directory as well as the location of workflow files (wrt to the cwd). The current working directory is from where `act` will be executed from. The workflow file location is the location from which `act` will try to read the workflow files from. Setting the workflow file is equivalent to calling `act` with `-W /path/to/workflows` option.
 
-By default, the root of the current project is used as the current working directory. By default, the workflow file location is the current working directory
+By default, if no current working directory is passed to the constructor, it is set to be `process.cwd()`.  
+Similarly, by default, the workflow file location is the current working directory
 
 ### Secrets
 
