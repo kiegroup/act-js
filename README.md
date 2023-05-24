@@ -215,17 +215,17 @@ When running a job (which ever way), you can optionally pass run options
 
 ```typescript
 {
-  cwd?: string; // overrides the global cwd and uses the one passed in options
-  workflowFile?: string; // overrides the global workflow file path and uses the one passed in options
-  bind?: boolean; // bind the cwd instead of copying it during workflow execution
-  // activates the artifact server
-  artifactServer?: {
-    path: string; // where to store the uploaded artifacts
-    port: string; // where to run the artifact server
+  cwd?: string;               // overrides the global cwd and uses the one passed in options
+  workflowFile?: string;      // overrides the global workflow file path and uses the one passed in options
+  bind?: boolean;             // bind the cwd instead of copying it during workflow execution
+  artifactServer?: {          // activates the artifact server
+    path: string;             // where to store the uploaded artifacts
+    port: string;             // where to run the artifact server
   };
-  mockApi: ResponseMocker[]; // specify the apis you want to mock. ResponseMocker is from mock-github
-  mockSteps: MockStep; // specify which steps you want to mock
-  logFile?: string; // write the raw output act produces to this file for debugging purposes
+  mockApi: ResponseMocker[];  // specify the apis you want to mock. ResponseMocker is from mock-github
+  mockSteps: MockStep;        // specify which steps you want to mock
+  logFile?: string;           // write the raw output act produces to this file for debugging purposes
+  verbose?: true;             // enable versbose logging
 }
 ```
 

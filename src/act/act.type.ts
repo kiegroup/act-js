@@ -32,6 +32,7 @@ export type RunOpts = {
   mockApi?: ResponseMocker<unknown, number>[];
   mockSteps?: MockStep;
   logFile?: string;
+  verbose?: boolean;
 };
 
 export type ContainerOpts = {
