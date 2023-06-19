@@ -1,350 +1,288 @@
 import path from "path";
 import { Act } from "@aj/act/act";
-import { Mockapi } from "@aj/mockapi/mockapi";
 import fs from "fs";
+import fsp, { FileHandle } from "fs/promises";
 import { homedir } from "os";
+import { spawn } from "child_process";
+import { ACT_BINARY } from "@aj/act/act.constants";
+import { StepMocker } from "@aj/step-mocker/step-mocker";
+import { Moctokit } from "@kie/mock-github";
+import { ForwardProxy } from "@aj/proxy/proxy";
+jest.mock("@aj/step-mocker/step-mocker");
+jest.mock("@aj/proxy/proxy");
+jest.mock("child_process");
 
-const resources = path.resolve(__dirname, "..", "resources", "act");
+const resources = "/path/to/some/workflow";
+const spawnSpy = spawn as jest.Mock;
+
+beforeEach(() => {
+  spawnSpy.mockReturnValue({
+    stdout: {
+      on: (_event: string, _callBack: (chunk: unknown) => void) =>
+        _callBack("chunk"),
+    },
+    stderr: {
+      on: (_event: string, _callBack: (chunk: unknown) => void) =>
+        _callBack("chunk"),
+    },
+    on: (_event: string, _callBack: (chunk: unknown) => void) => _callBack(0),
+  });
+});
 
 describe("list", () => {
+  beforeEach(() => {
+    // to prevent creation of actrc during initialization
+    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+  });
+
   test("without event", async () => {
     const act = new Act();
-    const list = await act.list(undefined, undefined, resources);
-    // act seems to behave a bit differently in different env - In GHA the pull request worklow is listed while on local machin it isn't
-    expect(list).toEqual(
-      expect.arrayContaining([
-        {
-          jobId: "push1",
-          jobName: "push1",
-          workflowName: "Act Push Test 1",
-          workflowFile: "push1.yml",
-          events: "push",
-        },
-        {
-          jobId: "push2",
-          jobName: "push2",
-          workflowName: "Act Push Test 2",
-          workflowFile: "push2.yml",
-          events: "push",
-        },
-      ])
-    );
+    await act.list(undefined, undefined, resources);
+    expect(spawnSpy).toHaveBeenCalledWith(ACT_BINARY, ["-W", resources, "-l"], {
+      cwd: process.cwd(),
+    });
   });
 
   test("with event", async () => {
     const act = new Act();
-    const list = await act.list("pull_request", __dirname, resources);
-    expect(list).toEqual(
-      expect.arrayContaining([
-        {
-          jobId: "pr",
-          jobName: "pr",
-          workflowName: "Pull Request",
-          workflowFile: "pull_request.yml",
-          events: "pull_request",
-        },
-      ])
+    await act.list("pull_request", __dirname, resources);
+    expect(spawnSpy).toHaveBeenCalledWith(
+      ACT_BINARY,
+      ["pull_request", "-W", resources, "-l"],
+      { cwd: __dirname }
     );
   });
 });
 
-(process.platform === "linux" ? describe : describe.skip)("run", () => {
+describe("run", () => {
+  beforeEach(() => {
+    // to prevent creation of actrc during initialization
+    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+  });
+
   test("run with job", async () => {
     const act = new Act();
-    const output = await act
-      .setSecret("SECRET1", "secret1")
-      .setEnv("ENV1", "env")
-      .runJob("push1", { workflowFile: resources, cwd: __dirname });
-
-    expect(output).toMatchObject([
-      {
-        name: "Main echo \"push 1\"",
-        status: 0,
-        output: "push 1",
-      },
-      {
-        name: "Main secrets",
-        output: "***",
-        status: 0,
-      },
-      {
-        name: "Main env",
-        output: "env",
-        status: 0,
-      },
-      { name: "Main pass", status: 0, output: "pass" },
-      { name: "Main fail", status: 1, output: "fail" },
-    ]);
+    await act.runJob("job", { workflowFile: resources, cwd: __dirname });
+    expect(spawnSpy).toHaveBeenCalledWith(
+      ACT_BINARY,
+      [
+        "-j",
+        "job",
+        "--env",
+        "GITHUB_STEP_SUMMARY=/dev/stdout",
+        "-W",
+        resources,
+      ],
+      { cwd: __dirname }
+    );
   });
 
   test("run with event", async () => {
     const act = new Act();
-    const output = await act
-      .setSecret("SECRET1", "secret1")
-      .setEnv("ENV1", "env")
-      .runEvent("pull_request", { workflowFile: resources });
-
-    expect(output).toStrictEqual([
-      {
-        name: "Main echo \"pull request\"",
-        status: 0,
-        output: "pull request",
-      },
-      {
-        name: "Main secrets",
-        output: "***",
-        status: 0,
-      },
-      {
-        name: "Main env",
-        output: "env",
-        status: 0,
-      },
-      { name: "Main pass", status: 0, output: "pass" },
-      { name: "Main fail", status: 1, output: "fail" },
-    ]);
+    await act.runEvent("pull_request", { workflowFile: resources });
+    expect(spawnSpy).toHaveBeenCalledWith(
+      ACT_BINARY,
+      [
+        "pull_request",
+        "--env",
+        "GITHUB_STEP_SUMMARY=/dev/stdout",
+        "-W",
+        resources,
+      ],
+      { cwd: process.cwd() }
+    );
   });
 
-  test("run with proxy", async () => {
-    const mockapi = new Mockapi({
-      google: {
-        baseUrl: "http://google.com",
-        endpoints: {
-          root: {
-            get: {
-              path: "/",
-              method: "get",
-              parameters: {
-                query: [],
-                path: [],
-                body: [],
-              },
-            },
+  test("run with job and event", async () => {
+    const act = new Act();
+    await act.runEventAndJob("pull_request", "job", {
+      workflowFile: resources,
+    });
+    expect(spawnSpy).toHaveBeenCalledWith(
+      ACT_BINARY,
+      [
+        "pull_request",
+        "-j",
+        "job",
+        "--env",
+        "GITHUB_STEP_SUMMARY=/dev/stdout",
+        "-W",
+        resources,
+      ],
+      { cwd: process.cwd() }
+    );
+  });
+});
+
+describe("handle step mocking", () => {
+  beforeEach(() => {
+    // to prevent creation of actrc during initialization
+    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+  });
+
+  test("workflow file passed in run opts", async () => {
+    const act = new Act();
+    const listSpy = jest.spyOn(act, "list").mockResolvedValueOnce([]);
+    await act.runJob("job", {
+      workflowFile: resources,
+      mockSteps: {
+        test: [
+          {
+            id: "step",
+            mockWith: "echo hello",
           },
-        },
+        ],
       },
     });
+    expect(listSpy).toHaveBeenCalledTimes(0);
+    expect(StepMocker).toHaveBeenCalledTimes(1);
+    expect(StepMocker).toHaveBeenCalledWith(
+      path.basename(resources),
+      process.cwd()
+    );
+  });
 
+  test("workflow file not passed in run opts but is different from current cwd", async () => {
+    const act = new Act(undefined, resources);
+    const listSpy = jest.spyOn(act, "list").mockResolvedValueOnce([]);
+    await act.runJob("job", {
+      mockSteps: {
+        test: [
+          {
+            id: "step",
+            mockWith: "echo hello",
+          },
+        ],
+      },
+      cwd: "cwd",
+    });
+    expect(listSpy).toHaveBeenCalledTimes(0);
+    expect(StepMocker).toHaveBeenCalledTimes(1);
+    expect(StepMocker).toHaveBeenCalledWith(path.basename(resources), "cwd");
+  });
+
+  test("get workflow files from list", async () => {
     const act = new Act();
-    const output = await act.runJob("mock", {
-      workflowFile: resources,
+    const listSpy = jest.spyOn(act, "list").mockResolvedValueOnce([
+      {
+        jobId: "job",
+        jobName: "jobName",
+        workflowName: "workflowName",
+        workflowFile: "workflowFile",
+        events: "events",
+      },
+    ]);
+    await act.runJob("job", {
+      mockSteps: {
+        test: [
+          {
+            id: "step",
+            mockWith: "echo hello",
+          },
+        ],
+      },
+    });
+    expect(listSpy).toHaveBeenCalledTimes(1);
+    expect(StepMocker).toHaveBeenCalledTimes(1);
+    expect(StepMocker).toHaveBeenCalledWith("workflowFile", process.cwd());
+  });
+});
+
+describe("parse run opts", () => {
+  test("setup mock api", async () => {
+    const act = new Act();
+    const moctokit = new Moctokit();
+    const envSpy = jest.spyOn(act, "setEnv");
+    await act.runJob("job", {
       mockApi: [
-        mockapi.mock.google.root
-          .get()
-          .setResponse({ status: 200, data: "mock response" }),
+        moctokit.rest.repos.get().setResponse({ status: 200, data: {} }),
       ],
     });
-    expect(output).toStrictEqual([
-      {
-        name: "Main https api call",
-        status: 0,
-        output: expect.stringMatching(/<HTML><HEAD>.+/),
-      },
-      {
-        name: "Main http api call",
-        status: 0,
-        output: "mock response",
-      },
-    ]);
-  });
-
-  test.each([
-    ["no specific workflow file", undefined],
-    ["specific workflow file", path.join(resources, "push1.yml")],
-  ])("run job with mocked step: %p", async (_title: string, workflowFile: string | undefined) => {
-    const original = fs.readFileSync(path.join(resources, "push1.yml"), "utf8");
-    const act = new Act(resources);
-    const output = await act.runJob("push1", {
-      workflowFile,
-      mockSteps: {
-        push1: [
-          {
-            name: "secrets",
-            mockWith: "echo secrets",
-          },
-          {
-            run: "echo $ENV1",
-            mockWith: "echo some env",
-          },
-        ],
-      },
-    });
-    expect(output).toMatchObject([
-      {
-        name: "Main echo \"push 1\"",
-        status: 0,
-        output: "push 1",
-      },
-      {
-        name: "Main secrets",
-        output: "secrets",
-        status: 0,
-      },
-      {
-        name: "Main env",
-        output: "some env",
-        status: 0,
-      },
-      { name: "Main pass", status: 0, output: "pass" },
-      { name: "Main fail", status: 1, output: "fail" },
-    ]);
-    fs.writeFileSync(path.join(resources, "push1.yml"), original);
-  });
-
-  test.each([
-    ["no specific workflow file", undefined],
-    ["specific workflow file", path.join(resources, "pull_request.yml")],
-  ])("run event with mocked step: %p", async (_title: string, workflowFile: string | undefined) => {
-    const original = fs.readFileSync(
-      path.join(resources, "pull_request.yml"),
-      "utf8"
+    expect(ForwardProxy).toBeCalledTimes(1);
+    expect(envSpy).toBeCalledTimes(4);
+    expect(envSpy).toHaveBeenCalledWith(
+      "http_proxy",
+      expect.stringMatching(/http:\/\/.*/)
     );
-    const act = new Act(resources, workflowFile);
-    const output = await act.runEvent("pull_request", {
-      mockSteps: {
-        pr: [
-          {
-            name: "secrets",
-            mockWith: "echo secrets",
-          },
-          {
-            run: "echo $ENV1",
-            mockWith: "echo some env",
-          },
-        ],
-      },
-    });
-    expect(output).toStrictEqual([
-      {
-        name: "Main echo \"pull request\"",
-        status: 0,
-        output: "pull request",
-      },
-      {
-        name: "Main secrets",
-        output: "secrets",
-        status: 0,
-      },
-      {
-        name: "Main env",
-        output: "some env",
-        status: 0,
-      },
-      { name: "Main pass", status: 0, output: "pass" },
-      { name: "Main fail", status: 1, output: "fail" },
-    ]);
-    fs.writeFileSync(path.join(resources, "pull_request.yml"), original);
+    expect(envSpy).toHaveBeenCalledWith(
+      "https_proxy",
+      expect.stringMatching(/http:\/\/.*/)
+    );
+    expect(envSpy).toHaveBeenCalledWith(
+      "HTTP_PROXY",
+      expect.stringMatching(/http:\/\/.*/)
+    );
+    expect(envSpy).toHaveBeenCalledWith(
+      "HTTPS_PROXY",
+      expect.stringMatching(/http:\/\/.*/)
+    );
   });
 
-  test("run with event json", async () => {
-    const act = new Act();
-    const output = await act
-      .setEvent({ some_event: "some_event" })
-      .runJob("event", { workflowFile: resources });
-
-    expect(output).toMatchObject([
+  test.each([
+    [
+      "artifact server",
       {
-        name: "Main event",
-        status: 0,
-        output: "some_event",
+        artifactServer: {
+          path: "path",
+          port: "port",
+        },
       },
-    ]);
+      ["--artifact-server-path", "path", "--artifact-server-port", "port"],
+    ],
+    ["bind", { bind: true }, ["--bind"]],
+    ["verbose", { verbose: true }, ["--verbose"]],
+  ])("setup %p", async (_title, runOpts, expectedArgs) => {
+    const act = new Act();
+    await act.runJob("job", runOpts);
+    expect(spawnSpy).toHaveBeenCalledWith(
+      ACT_BINARY,
+      [
+        "-j",
+        "job",
+        "--env",
+        "GITHUB_STEP_SUMMARY=/dev/stdout",
+        ...expectedArgs,
+        "-W",
+        process.cwd(),
+      ],
+      { cwd: process.cwd() }
+    );
   });
 
-  test("run with group annotations", async () => {
+  test("setup container opts", async () => {
     const act = new Act();
-    const output = await act.runJob("groups", { workflowFile: resources });
-
-    expect(output).toStrictEqual([
-      {
-        name: "Main Group 1 of log lines",
-        status: 0,
-        output: "Inside group 1",
-        groups: [
-          {
-            name: "Group 1",
-            output: "Inside group 1",
-          },
-        ],
-      },
-      {
-        name: "Main Group 2 of log lines",
-        status: 0,
-        output: "Inside group 2 part 1\nInside group 2 part 2",
-        groups: [
-          {
-            name: "Group 2 part 1",
-            output: "Inside group 2 part 1",
-          },
-          {
-            name: "Group 2 part 2",
-            output: "Inside group 2 part 2",
-          },
-        ],
-      },
-    ]);
+    await act
+      .setContainerArchitecture("val")
+      .setContainerDaemonSocket("val")
+      .setCustomContainerOpts("val")
+      .runJob("job");
+    expect(spawnSpy).toHaveBeenCalledWith(
+      ACT_BINARY,
+      [
+        "-j",
+        "job",
+        "--env",
+        "GITHUB_STEP_SUMMARY=/dev/stdout",
+        "--container-architecture",
+        "val",
+        "--container-daemon-socket",
+        "val",
+        "--container-options",
+        "val",
+        "-W",
+        process.cwd(),
+      ],
+      { cwd: process.cwd() }
+    );
   });
 
-  test("run with input", async () => {
+  test("enable logging", async () => {
     const act = new Act();
-    const output = await act
-      .setInput("some_input", "some_input")
-      .runEventAndJob("workflow_dispatch", "input", { workflowFile: resources });
-
-    expect(output).toMatchObject([
-      {
-        name: "Main input",
-        status: 0,
-        output: "some_input",
-      },
-    ]);
-  });
-
-  test("run with input and event json", async () => {
-    const act = new Act();
-    const output = await act
-      .setInput("some_input", "some_input")
-      .setEvent({ some_event: "some_event" })
-      .runEventAndJob("workflow_dispatch", "event-and-input", { workflowFile: resources });
-
-    expect(output).toMatchObject([
-      {
-        name: "Main event",
-        status: 0,
-        output: "some_event",
-      },
-      {
-        name: "Main input",
-        status: 0,
-        output: "some_input",
-      },
-    ]);
-  });
-
-  test("run with matrix", async () => {
-    const act = new Act();
-    const output = await act
-      .setMatrix("os", ["ubuntu-latest"])
-      .setMatrix("node-version", ["14.x", "16.x"])
-      .runJob("matrix-test", { workflowFile: resources });
-    
-    expect(output).toStrictEqual([
-      { name: "Main Test os", status: 0, output: "" },
-      { name: "Main Test node-version", status: 0, output: "" },
-      { name: "Main Test os", status: 0, output: "" },
-      { name: "Main Test node-version", status: 0, output: "" }
-    ]);
-  });
-
-  test("run with platforms", async () => {
-    const act = new Act();
-    const output = await act
-      .setPlatforms("macos-latest", "-self-hosted")
-      .runJob("platforms-test", { workflowFile: resources });
-    
-    expect(output).toStrictEqual([
-      { name: "Main Test platforms", status: 0, output: "should be executed" },
-    ]);
+    const openSpy = jest.spyOn(fsp, "open").mockResolvedValueOnce({
+      createWriteStream: () => undefined
+    } as unknown as FileHandle);
+    await act.runJob("job", { logFile: "logFile" });
+    expect(openSpy).toHaveBeenCalledTimes(1);
   });
 });
 
