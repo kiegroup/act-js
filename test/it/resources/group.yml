@@ -1,0 +1,21 @@
+name: groups
+
+on: push
+
+jobs:
+  groups:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Group 1 of log lines
+        run: |
+          echo "::group::Group 1"
+          echo "Inside group 1"
+          echo "::endgroup::"
+      - name: Group 2 of log lines
+        run: |
+          echo "::group::Group 2 part 1"
+          echo "Inside group 2 part 1"
+          echo "::endgroup::"
+          echo "::group::Group 2 part 2"
+          echo "Inside group 2 part 2"
+          echo "::endgroup::"

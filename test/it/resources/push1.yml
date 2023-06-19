@@ -1,0 +1,17 @@
+name: Act Push Test 1
+on: push
+jobs:
+  push1:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "push 1"
+      - name: secrets
+        run: echo $TEST1
+        env:
+          TEST1: ${{secrets.SECRET1}}
+      - name: env
+        run: echo $ENV1
+      - name: pass
+        run: echo "pass"
+      - name: fail
+        run: echo "fail" && exit 1

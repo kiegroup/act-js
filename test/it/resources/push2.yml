@@ -1,0 +1,9 @@
+name: Act Push Test 2
+
+on: push
+
+jobs:
+  push2:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "push 2"

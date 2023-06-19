@@ -1,0 +1,361 @@
+import path from "path";
+import { Act } from "@aj/act/act";
+import { Mockapi } from "@aj/mockapi/mockapi";
+import fs from "fs";
+
+const resources = path.resolve(__dirname, "resources");
+
+describe("list", () => {
+  test("without event", async () => {
+    const act = new Act();
+    const list = await act.list(undefined, undefined, resources);
+    // act seems to behave a bit differently in different env - In GHA the pull request worklow is listed while on local machin it isn't
+    expect(list).toEqual(
+      expect.arrayContaining([
+        {
+          jobId: "push1",
+          jobName: "push1",
+          workflowName: "Act Push Test 1",
+          workflowFile: "push1.yml",
+          events: "push",
+        },
+        {
+          jobId: "push2",
+          jobName: "push2",
+          workflowName: "Act Push Test 2",
+          workflowFile: "push2.yml",
+          events: "push",
+        },
+      ])
+    );
+  });
+
+  test("with event", async () => {
+    const act = new Act();
+    const list = await act.list("pull_request", __dirname, resources);
+    expect(list).toEqual(
+      expect.arrayContaining([
+        {
+          jobId: "pr",
+          jobName: "pr",
+          workflowName: "Pull Request",
+          workflowFile: "pull_request.yml",
+          events: "pull_request",
+        },
+      ])
+    );
+  });
+});
+
+(process.platform === "linux" ? describe : describe.skip)("run", () => {
+  test("run with job", async () => {
+    const act = new Act();
+    const output = await act
+      .setSecret("SECRET1", "secret1")
+      .setEnv("ENV1", "env")
+      .runJob("push1", { workflowFile: resources, cwd: __dirname });
+
+    expect(output).toMatchObject([
+      {
+        name: "Main echo \"push 1\"",
+        status: 0,
+        output: "push 1",
+      },
+      {
+        name: "Main secrets",
+        output: "***",
+        status: 0,
+      },
+      {
+        name: "Main env",
+        output: "env",
+        status: 0,
+      },
+      { name: "Main pass", status: 0, output: "pass" },
+      { name: "Main fail", status: 1, output: "fail" },
+    ]);
+  });
+
+  test("run with event", async () => {
+    const act = new Act();
+    const output = await act
+      .setSecret("SECRET1", "secret1")
+      .setEnv("ENV1", "env")
+      .runEvent("pull_request", { workflowFile: resources });
+
+    expect(output).toStrictEqual([
+      {
+        name: "Main echo \"pull request\"",
+        status: 0,
+        output: "pull request",
+      },
+      {
+        name: "Main secrets",
+        output: "***",
+        status: 0,
+      },
+      {
+        name: "Main env",
+        output: "env",
+        status: 0,
+      },
+      { name: "Main pass", status: 0, output: "pass" },
+      { name: "Main fail", status: 1, output: "fail" },
+    ]);
+  });
+
+  test("run with proxy", async () => {
+    const mockapi = new Mockapi({
+      google: {
+        baseUrl: "http://google.com",
+        endpoints: {
+          root: {
+            get: {
+              path: "/",
+              method: "get",
+              parameters: {
+                query: [],
+                path: [],
+                body: [],
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const act = new Act();
+    const output = await act.runJob("mock", {
+      workflowFile: resources,
+      mockApi: [
+        mockapi.mock.google.root
+          .get()
+          .setResponse({ status: 200, data: "mock response" }),
+      ],
+    });
+    expect(output).toStrictEqual([
+      {
+        name: "Main https api call",
+        status: 0,
+        output: expect.stringMatching(/<HTML><HEAD>.+/),
+      },
+      {
+        name: "Main http api call",
+        status: 0,
+        output: "mock response",
+      },
+    ]);
+  });
+
+  test.each([
+    ["no specific workflow file", undefined],
+    ["specific workflow file", path.join(resources, "push1.yml")],
+  ])(
+    "run job with mocked step: %p",
+    async (_title: string, workflowFile: string | undefined) => {
+      const original = fs.readFileSync(
+        path.join(resources, "push1.yml"),
+        "utf8"
+      );
+      const act = new Act(resources);
+      const output = await act.runJob("push1", {
+        workflowFile,
+        mockSteps: {
+          push1: [
+            {
+              name: "secrets",
+              mockWith: "echo secrets",
+            },
+            {
+              run: "echo $ENV1",
+              mockWith: "echo some env",
+            },
+          ],
+        },
+      });
+      expect(output).toMatchObject([
+        {
+          name: "Main echo \"push 1\"",
+          status: 0,
+          output: "push 1",
+        },
+        {
+          name: "Main secrets",
+          output: "secrets",
+          status: 0,
+        },
+        {
+          name: "Main env",
+          output: "some env",
+          status: 0,
+        },
+        { name: "Main pass", status: 0, output: "pass" },
+        { name: "Main fail", status: 1, output: "fail" },
+      ]);
+      fs.writeFileSync(path.join(resources, "push1.yml"), original);
+    }
+  );
+
+  test.each([
+    ["no specific workflow file", undefined],
+    ["specific workflow file", path.join(resources, "pull_request.yml")],
+  ])(
+    "run event with mocked step: %p",
+    async (_title: string, workflowFile: string | undefined) => {
+      const original = fs.readFileSync(
+        path.join(resources, "pull_request.yml"),
+        "utf8"
+      );
+      const act = new Act(resources, workflowFile);
+      const output = await act.runEvent("pull_request", {
+        mockSteps: {
+          pr: [
+            {
+              name: "secrets",
+              mockWith: "echo secrets",
+            },
+            {
+              run: "echo $ENV1",
+              mockWith: "echo some env",
+            },
+          ],
+        },
+      });
+      expect(output).toStrictEqual([
+        {
+          name: "Main echo \"pull request\"",
+          status: 0,
+          output: "pull request",
+        },
+        {
+          name: "Main secrets",
+          output: "secrets",
+          status: 0,
+        },
+        {
+          name: "Main env",
+          output: "some env",
+          status: 0,
+        },
+        { name: "Main pass", status: 0, output: "pass" },
+        { name: "Main fail", status: 1, output: "fail" },
+      ]);
+      fs.writeFileSync(path.join(resources, "pull_request.yml"), original);
+    }
+  );
+
+  test("run with event json", async () => {
+    const act = new Act();
+    const output = await act
+      .setEvent({ some_event: "some_event" })
+      .runJob("event", { workflowFile: resources });
+
+    expect(output).toMatchObject([
+      {
+        name: "Main event",
+        status: 0,
+        output: "some_event",
+      },
+    ]);
+  });
+
+  test("run with group annotations", async () => {
+    const act = new Act();
+    const output = await act.runJob("groups", { workflowFile: resources });
+
+    expect(output).toStrictEqual([
+      {
+        name: "Main Group 1 of log lines",
+        status: 0,
+        output: "Inside group 1",
+        groups: [
+          {
+            name: "Group 1",
+            output: "Inside group 1",
+          },
+        ],
+      },
+      {
+        name: "Main Group 2 of log lines",
+        status: 0,
+        output: "Inside group 2 part 1\nInside group 2 part 2",
+        groups: [
+          {
+            name: "Group 2 part 1",
+            output: "Inside group 2 part 1",
+          },
+          {
+            name: "Group 2 part 2",
+            output: "Inside group 2 part 2",
+          },
+        ],
+      },
+    ]);
+  });
+
+  test("run with input", async () => {
+    const act = new Act();
+    const output = await act
+      .setInput("some_input", "some_input")
+      .runEventAndJob("workflow_dispatch", "input", {
+        workflowFile: resources,
+      });
+
+    expect(output).toMatchObject([
+      {
+        name: "Main input",
+        status: 0,
+        output: "some_input",
+      },
+    ]);
+  });
+
+  test("run with input and event json", async () => {
+    const act = new Act();
+    const output = await act
+      .setInput("some_input", "some_input")
+      .setEvent({ some_event: "some_event" })
+      .runEventAndJob("workflow_dispatch", "event-and-input", {
+        workflowFile: resources,
+      });
+
+    expect(output).toMatchObject([
+      {
+        name: "Main event",
+        status: 0,
+        output: "some_event",
+      },
+      {
+        name: "Main input",
+        status: 0,
+        output: "some_input",
+      },
+    ]);
+  });
+
+  test("run with matrix", async () => {
+    const act = new Act();
+    const output = await act
+      .setMatrix("os", ["ubuntu-latest"])
+      .setMatrix("node-version", ["14.x", "16.x"])
+      .runJob("matrix-test", { workflowFile: resources });
+
+    expect(output).toStrictEqual([
+      { name: "Main Test os", status: 0, output: "" },
+      { name: "Main Test node-version", status: 0, output: "" },
+      { name: "Main Test os", status: 0, output: "" },
+      { name: "Main Test node-version", status: 0, output: "" },
+    ]);
+  });
+
+  test("run with platforms", async () => {
+    const act = new Act();
+    const output = await act
+      .setPlatforms("macos-latest", "-self-hosted")
+      .runJob("platforms-test", { workflowFile: resources });
+
+    expect(output).toStrictEqual([
+      { name: "Main Test platforms", status: 0, output: "should be executed" },
+    ]);
+  });
+});
