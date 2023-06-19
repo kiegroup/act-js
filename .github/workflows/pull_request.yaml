@@ -11,7 +11,26 @@ on:
       - 'jest.config.ts'
 
 jobs:
-  tests:
+  unit:
+    strategy:
+      matrix:
+        node-version: [16.x]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+                
+      - name: Install packages
+        run: npm ci
+
+      - name: Test
+        run: npm run test:unit
+  
+  integration:
     strategy:
       matrix:
         node-version: [16.x]
@@ -29,8 +48,8 @@ jobs:
         run: npm ci
 
       - name: Test
-        run: npm test
-
+        run: npm run test:it
+  
   lint:
     runs-on: ubuntu-latest
     steps:
