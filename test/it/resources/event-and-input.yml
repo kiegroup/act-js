@@ -1,0 +1,20 @@
+name: Event and Input
+
+on:
+  workflow_dispatch:
+    inputs:
+      some_input:
+        default: 'world'
+        required: false
+        type: string
+
+jobs:
+  event-and-input:
+    runs-on: ubuntu-latest
+    steps:
+      - name: event
+        run: echo "$EVENT"
+        env:
+          EVENT: ${{ github.event.some_event }}
+      - name: input
+        run: echo "${{ inputs.some_input }}"

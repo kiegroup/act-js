@@ -219,15 +219,16 @@ export class Act {
     if (opts?.mockSteps) {
       // there could multiple workflow files with same event triggers or job names. Act executes them all
       let workflowFiles: string[] = [];
+      const cwd = opts.cwd ?? this.cwd;
 
       // if workflow file was defined then no need to consider all possible options
       if (opts.workflowFile) {
         workflowFiles = [path.basename(opts.workflowFile)];
-      } else if (this.workflowFile !== this.cwd) {
+      } else if (this.workflowFile !== cwd) {
         workflowFiles = [path.basename(this.workflowFile)];
       } else {
         workflowFiles = (
-          await this.list(undefined, opts.cwd, opts.workflowFile)
+          await this.list(undefined, opts.cwd)
         ).filter(filter).map(l => l.workflowFile);
       }
 
@@ -252,7 +253,7 @@ export class Act {
     const fsStream = await this.logRawOutput(logFile);
     return new Promise((resolve, reject) => {
       // do not use spawnSync. will cause a deadlock when used with proxy settings
-      const childProcess = spawn(ACT_BINARY, ["-W", cwd, ...args], { cwd });
+      const childProcess = spawn(ACT_BINARY, args, { cwd });
       let data = "";
 
       childProcess.stdout.on("data", chunk => {
@@ -287,7 +288,7 @@ export class Act {
     const workflowFile = opts?.workflowFile ?? this.workflowFile;
     let proxy: ForwardProxy | undefined = undefined;
 
-    if (opts?.mockApi) {
+    if (opts?.mockApi && opts.mockApi.length > 0) {
       proxy = new ForwardProxy(opts.mockApi);
 
       const address = await proxy.start();
