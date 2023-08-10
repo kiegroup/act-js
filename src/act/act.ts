@@ -289,7 +289,7 @@ export class Act {
     let proxy: ForwardProxy | undefined = undefined;
 
     if (opts?.mockApi && opts.mockApi.length > 0) {
-      proxy = new ForwardProxy(opts.mockApi);
+      proxy = new ForwardProxy(opts.mockApi, opts?.verbose);
 
       const address = await proxy.start();
 
