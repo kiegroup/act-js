@@ -49,7 +49,7 @@ describe("stop", () => {
 
 describe("http", () => {
   let proxy: ForwardProxy;
-  
+
   afterEach(async () => {
     await proxy.stop();
   });
@@ -85,7 +85,8 @@ describe("http", () => {
     ]);
     const ip = await proxy.start();
 
-    const response = await executeFile(`
+    const response = await executeFile(
+      `
     const axios = require("axios");
     const {getOctokit} = require("@actions/github")
     async function run() {
@@ -100,17 +101,16 @@ describe("http", () => {
       );
     }
     run();
-    `, {
-      env: {
-        http_proxy: `http://${ip}`,
-        https_proxy: `http://${ip}`,
-        GITHUB_API_URL: "http://api.github.com"
+    `,
+      ip,
+      {
+        GITHUB_API_URL: "http://api.github.com",
       }
-    });
+    );
 
     expect(JSON.parse(response.trim())).toStrictEqual({
       axios: { msg: "mocked_response" },
-      octokit: { full_name: "mocked_name" }
+      octokit: { full_name: "mocked_name" },
     });
   });
 
@@ -141,15 +141,13 @@ describe("http", () => {
     ]);
     const ip = await proxy.start();
 
-    const response = await executeFile(`
+    const response = await executeFile(
+      `
     const axios = require("axios");
     axios.get("http://redhat.com/").then(d => console.log(d.status))
-    `, {
-      env: {
-        http_proxy: `http://${ip}`,
-        https_proxy: `http://${ip}`,
-      }
-    });
+    `,
+      ip
+    );
 
     expect(response.trim()).toBe("200");
   });
@@ -164,22 +162,23 @@ describe("http", () => {
     ]);
     const ip = await proxy.start();
 
-    const response = await executeFile(`
+    const response = await executeFile(
+      `
     const {getOctokit} = require("@actions/github")
     const octokit = getOctokit("token");
     octokit.rest.repos.get({
       repo: "kiegroup",
       owner: "kiegroup",
     }).then(data => console.log(JSON.stringify({status: data.status, data: data.data})));
-    `, {
-      env: {
-        http_proxy: `http://${ip}`,
-        https_proxy: `http://${ip}`,
-        GITHUB_API_URL: "http://api.github.com"
-      }
-    });
+    `,
+      ip,
+      { GITHUB_API_URL: "http://api.github.com" }
+    );
 
-    expect(JSON.parse(response.trim())).toStrictEqual({ status: 200, data: {full_name: "mocked_name"} });
+    expect(JSON.parse(response.trim())).toStrictEqual({
+      status: 200,
+      data: { full_name: "mocked_name" },
+    });
   });
 });
 
@@ -211,7 +210,7 @@ describe("https", () => {
   afterEach(async () => {
     await proxy.stop();
   });
-  
+
   test("don't mock when a CONNECT request is sent", async () => {
     proxy = new ForwardProxy([
       mockapi.mock.google.root
@@ -220,12 +219,7 @@ describe("https", () => {
     ]);
     const ip = await proxy.start();
 
-    const response = await executeCurl(["-s", "https://google.com"], {
-      env: {
-        http_proxy: `http://${ip}`,
-        https_proxy: `http://${ip}`
-      }
-    });
+    const response = await executeCurl(["-s", "https://google.com"], ip);
     expect(response).toMatch(/<HTML><HEAD>.+/);
   });
 
@@ -236,24 +230,36 @@ describe("https", () => {
         .setResponse({ status: 200, data: { msg: "mocked_response" } }),
     ]);
     const ip = await proxy.start();
-    
-    const response = await executeFile(`
+
+    const response = await executeFile(
+      `
     const axios = require("axios");
     axios.get("https://google.com").then(d => console.log(JSON.stringify({status: d.status, data: d.data})))
-    `, {
-      env: {
-        http_proxy: `http://${ip}`,
-        https_proxy: `http://${ip}`,
-      }
-    });
+    `,
+      ip
+    );
 
-    expect(JSON.parse(response.trim())).toStrictEqual({status: 200, data: {msg: "mocked_response"}});
+    expect(JSON.parse(response.trim())).toStrictEqual({
+      status: 200,
+      data: { msg: "mocked_response" },
+    });
   });
 });
 
-async function executeCurl(args: string[], options?: SpawnOptionsWithoutStdio) {
+async function executeCurl(
+  args: string[],
+  ip: string,
+  additionalEnv: SpawnOptionsWithoutStdio["env"] = {}
+) {
   return new Promise((resolve, reject) => {
-    const childProcess = spawn("curl", args, options);
+    const childProcess = spawn("curl", args, {
+      env: {
+        ...process.env,
+        ...additionalEnv,
+        http_proxy: `http://${ip}`,
+        https_proxy: `http://${ip}`,
+      },
+    });
     let data = "";
     let error = "";
     childProcess.stdout.on("data", chunk => {
@@ -273,10 +279,21 @@ async function executeCurl(args: string[], options?: SpawnOptionsWithoutStdio) {
   });
 }
 
-async function executeFile(request: string, options?: SpawnOptionsWithoutStdio): Promise<string> {
+async function executeFile(
+  request: string,
+  ip: string,
+  additionalEnv: SpawnOptionsWithoutStdio["env"] = {}
+): Promise<string> {
   writeFileSync(executeRequestFile, request);
   return new Promise((resolve, reject) => {
-    const childProcess = spawn("node", [executeRequestFile], options);
+    const childProcess = spawn("node", [executeRequestFile], {
+      env: {
+        ...process.env,
+        ...additionalEnv,
+        http_proxy: `http://${ip}`,
+        https_proxy: `http://${ip}`,
+      },
+    });
     let data = "";
     let error = "";
     childProcess.stdout.on("data", chunk => {
