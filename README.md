@@ -285,13 +285,12 @@ let result = await act.runEventAndJob("pull_request", "jobId");
 
 #### Mocking apis during the run
 
-You can use [Mockapi](#mockapi) and [Moctokit](https://github.com/kiegroup/mock-github#moctokit) to mock any kind of HTTP and HTTPS requests during your workflow run provided that the client being used honours HTTP_PROXY and HTTPS_PROXY env variables. Depending on the client, for HTTPS they might issue a CONNECT request to open a secure TCP tunnel. In this case `Act` won't be able to mock the HTTPS request.
-(Note - For Octokit, you can mock HTTPS requests because it does not issues a CONNECT request)
+You can use [Mockapi](#mockapi) and [Moctokit](https://github.com/kiegroup/mock-github#moctokit) to mock any kind of HTTP and HTTPS requests during your workflow run provided that the client being used honors HTTP_PROXY and HTTPS_PROXY env variables. Depending on the client, for HTTPS they might issue a CONNECT request to open a secure TCP tunnel. In this case `Act` won't be able to mock the HTTPS request.
 
 ```typescript
 import { Moctokit } from "@kie/mock-github";
 import { Mockapi } from "@kie/act-js";
-const moctokit = new Moctokit();
+const moctokit = new Moctokit("http://api.github.com");
 const mockapi = new Mockapi({
   customApi: {
     baseUrl: "http://custom-api.com",
@@ -325,6 +324,12 @@ let result = await act.runEvent("pull_request", {
   ],
 });
 ```
+
+For testing actions which use `Octokit`, you will need to make sure that `Octokit` instance is configured to use proxies. You can do so by using [ProxyAgent](https://github.com/octokit/octokit.js#proxy-servers-nodejs-only) or using the hydrated `Octokit` instance from [@actions/github](https://github.com/actions/toolkit/tree/main/packages/github).
+
+Examples to help you get started:
+- [Using ProxyAgent with Octokit](https://github.com/shubhbapna/mock-github-act-js-examples/tree/main/custom-actions/javascript)
+- [Testing @actions/github-script which uses @actions/github internally](https://github.com/shubhbapna/mock-github-act-js-examples/tree/main/workflow/github-script)
 
 #### Mocking steps
 

@@ -5,6 +5,7 @@ import { Server } from "http";
 import { ResponseMocker } from "@kie/mock-github";
 import { networkInterfaces } from "os";
 import internal from "stream";
+import { LOCALHOST } from "@aj/proxy/proxy.types";
 
 export class ForwardProxy {
   private apis: ResponseMocker<unknown, number>[];
@@ -13,14 +14,20 @@ export class ForwardProxy {
   private logger: (msg: string) => void;
   private currentConnections: Record<number, internal.Duplex>;
   private currentSocketId: number;
+  private secondaryProxy?: {
+    proxy: ForwardProxy,
+    proxyAddress: string
+  };
+  private shouldHandleConnect: boolean;
 
-  constructor(apis: ResponseMocker<unknown, number>[], verbose = false) {
+  constructor(apis: ResponseMocker<unknown, number>[], verbose = false, shouldHandleConnect = true) {
     this.apis = apis;
     this.app = express();
-    this.logger = verbose ? console.log : _msg => undefined;
+    this.logger = verbose ? console.log.bind(undefined, "[act-js API Mocker]") : _msg => undefined;
     this.server = http.createServer(this.app);
     this.currentConnections = {};
     this.currentSocketId = 0;
+    this.shouldHandleConnect = shouldHandleConnect;
   }
 
   /**
@@ -66,7 +73,12 @@ export class ForwardProxy {
         Object.values(this.currentConnections).forEach(socket =>
           socket.destroy()
         );
-        resolve();
+
+        if (this.secondaryProxy) {
+          this.secondaryProxy.proxy.stop().then(resolve);
+        } else {
+          resolve();
+        }
       }
     });
   }
@@ -92,9 +104,6 @@ export class ForwardProxy {
   }
 
   private initServer() {
-    // this context is lost in callbacks
-    const logger = this.logger;
-
     // keep track of connected sockets for clean up
     this.server.on("connection", socket => {
       const socketId = this.currentSocketId;
@@ -104,44 +113,89 @@ export class ForwardProxy {
       this.currentSocketId += 1;
     });
 
-    // forward any https connections intiated via CONNECT as is
-    this.server.on("connect", (req, socket) => {
-      socket.on("error", logger);
+    if (this.shouldHandleConnect) {
+      this.handleCONNECT();
+    } else {
+      // reject connect if received and the proxy was initialized not to accept connect requests
+      this.server.on("connect", (_, socket) => {
+        socket.write("HTTP/1.1 400 Bad request\r\n\r\n");
+      });
+    }
+
+    this.handleAPIInterception();
+  }
+
+  /**
+   * forward any http(s) connections intiated via CONNECT as is
+   */
+  private handleCONNECT() {
+    this.server.on("connect", async (req, socket) => {
+      socket.on("error", this.logger);
+
       const host = req.url?.split(":")[0];
       const port = req.url?.split(":")[1];
-      logger(`received connect request for ${host}:${port}`);
+      this.logger(`received connect request for ${host}:${port}`);
       if (!host || !port) {
         socket.write("HTTP/1.1 400 Bad request\r\n\r\n");
         return;
       }
-      const target = net.createConnection({ host, port: parseInt(port) });
-      target.on("error", logger);
+
+      let targetHost = host, targetPort = port;
+
+      // if connect request was issued for http target, then we handle it by accepting the connect,
+      // spinning up a secondary proxy and piping the request to the secondary proxy
+      if (port === "80") {        
+        if (!this.secondaryProxy) {
+          // NOTE: make sure to disable CONNECT handling in the secondary proxy to avoid spinning up infinite proxies
+          // this can happen if the client is malicious and keeps on sending CONNECT requests
+          const proxy = new ForwardProxy(this.apis, false, false);
+          const proxyAddress = await proxy.start();
+          this.secondaryProxy = { proxy, proxyAddress };
+        }
+        const [_, secondaryProxyPort] = this.secondaryProxy.proxyAddress.split(":");
+        targetHost = LOCALHOST;
+        targetPort = secondaryProxyPort;
+      } 
+
+      const target = net.createConnection({ host: targetHost, port: parseInt(targetPort) });
+      target.on("error", this.logger);
       target.on("connect", () => {
-        logger(`connected to ${host}:${port}`);
+        this.logger(`connected to ${targetHost}:${targetPort}`);
         socket.write("HTTP/1.1 200 OK\r\n\r\n");
         socket.pipe(target);
         target.pipe(socket);
       });
     });
+  }
 
+  private handleAPIInterception() {
     // mock all apis
     this.apis.forEach(api => api.reply());
 
     // forward the intercepted api call
-    this.app.all("/*", function (req, res) {
+    this.app.all("/*", (req, res) => {
+      let path = req.path;
+
+      // for http connections initiated via CONNECT, req.url resolves to be the path and not the entire url
+      try {
+        path += new URL(req.url).search;
+      } catch (err) {
+        path += new URL(`http://${req.hostname}${req.url}`).search;
+      }
+      
       const opts = {
         host: req.hostname,
-        path: req.path + new URL(req.url).search,
+        path,
         method: req.method,
         headers: req.headers,
         agent: false,
       };
 
-      logger(JSON.stringify(opts));
+      this.logger(JSON.stringify(opts));
 
       const request = http.request(opts);
 
-      request.on("response", function (response) {
+      request.on("response", response => {
         // set status code
         if (response.statusCode) {res.status(response.statusCode);}
 
