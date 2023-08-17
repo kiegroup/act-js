@@ -333,7 +333,7 @@ Examples to help you get started:
 
 #### Mocking steps
 
-There are cases where some of the steps have to be directly skipped or mocked because it is not feasible to execute them in a test env and might even be redundant to test them (npm publish for instance), so `mockSteps` mechanism is provided to overcome those cases.
+There are cases where some of the steps have to be skipped or mocked because it is not feasible to execute them in a test env and might even be redundant to test them (npm publish for instance). In such cases, we can use the `mockSteps` option when executing `act`.
 
 Let's suppose this is the workflow to test
 
@@ -355,7 +355,7 @@ jobs:
             NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 ```
 
-The two final steps has to be skipped since the package shouldn't be really published (and most probably it will fail due to NPM_TOKEN or already existing version on the registry). In order to do skip or mock this step we can do the following while running the workflow
+Now while testing this, we probably don't want to actually publish a package, so we will use `mockSteps` to change the `npm publish --access public` command to something else. Moreover, say the registry url was behind a vpn and not really accessible locally. We can change this registry url as well using `mockSteps`. In particular, for any step you can replace it with any new step you want. The new step doesn't override the old step completely, it just updates the values that are defined in the new step. To delete a particular field, you will have to set it to `undefined` when passing the new step to `mockSteps`.
 
 ```typescript
 const act = new Act();
@@ -363,6 +363,14 @@ let result = await act.runJob("job_id", {
   mockSteps: {
     // job name
     publish: [
+      {
+        uses: "actions/setup-node@v3",
+        mockWith: {
+          with: {
+            "registry-url": "local-regsitry"
+          }
+        }
+      },
       {
         name: "publish step",
         mockWith: "echo published",
@@ -380,19 +388,19 @@ Schema for `mockSteps`
   [jobName: string]: (
     {
       name: "locates the step using the name field"
-      mockWith: "command to replace the given step with"
+      mockWith: "command or a new step as JSON to replace the given step with"
     } |
     {
       id: "locates the step using the id field"
-      mockWith: "command to replace the given step with"
+      mockWith: "command or a new step as JSON to replace the given step with"
     } |
     {
       uses: "locates the step using the uses field"
-      mockWith: "command to replace the given step with"
+      mockWith: "command or a new step as JSON to replace the given step with"
     } |
     {
       run: "locates the step using the run field"
-      mockWith: "command to replace the given step with"
+      mockWith: "command or a new step as JSON to replace the given step with"
     }
   )[]
 }

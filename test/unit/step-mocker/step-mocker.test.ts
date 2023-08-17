@@ -153,9 +153,7 @@ describe("locateSteps", () => {
         },
       ],
     });
-    const workflow = stringify(
-      parse(data.replace("echo $TEST1", "echo step"))
-    );
+    const workflow = stringify(parse(data.replace("echo $TEST1", "echo step")));
     expect(writeFileSyncMock).toHaveBeenLastCalledWith(
       path.join(__dirname, "workflow.yaml"),
       workflow,
@@ -197,13 +195,98 @@ describe("locateSteps", () => {
         },
       ],
     });
-    const workflow = stringify(
-      parse(data.replace("echo run", "echo step"))
-    );
+    const workflow = stringify(parse(data.replace("echo run", "echo step")));
     expect(writeFileSyncMock).toHaveBeenLastCalledWith(
       path.join(__dirname, "workflow.yaml"),
       workflow,
       "utf8"
     );
+  });
+});
+
+describe("mock", () => {
+  beforeEach(async () => {
+    existsSyncMock.mockReturnValueOnce(true);
+    writeFileSyncMock.mockReturnValueOnce(undefined);
+    readFileSyncMock.mockReturnValueOnce(
+      await readFile(path.join(resources, "steps.yaml"), "utf8")
+    );
+  });
+
+  test("mockWith is a string", async () => {
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    await stepMocker.mock({
+      name: [
+        {
+          run: "echo run",
+          mockWith: "echo step",
+        },
+        {
+          uses: "actions/checkout@v3",
+          mockWith: "echo checkout"
+        }
+      ],
+    });
+
+    expect(parse(writeFileSyncMock.mock.calls[0][1])).toMatchObject({
+      jobs: {
+        name: {
+          steps: expect.arrayContaining([
+            {
+              run: "echo checkout",
+            },
+            {
+              run: "echo step",
+            },
+          ]),
+        },
+      },
+    });
+  });
+
+  test("mockWith is a Step", async () => {
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    await stepMocker.mock({
+      name: [
+        {
+          uses: "actions/checkout@v3",
+          mockWith: {
+            uses: "actions/setup-node",
+            with: {
+              nodeVersion: 16
+            }
+          }
+        },
+        {
+          name: "secrets",
+          mockWith: {
+            env: {
+              TEST1: "val",
+            },
+            name: undefined // try deleting the field
+          }
+        }
+      ],
+    });
+    expect(parse(writeFileSyncMock.mock.calls[0][1])).toMatchObject({
+      jobs: {
+        name: {
+          steps: expect.arrayContaining([
+            {
+              run: "echo $TEST1",
+              env: {
+                TEST1: "val"
+              }
+            },
+            {
+              uses: "actions/setup-node",
+              with: {
+                nodeVersion: 16
+              }
+            },
+          ]),
+        },
+      },
+    });
   });
 });
