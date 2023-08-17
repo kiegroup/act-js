@@ -285,7 +285,13 @@ let result = await act.runEventAndJob("pull_request", "jobId");
 
 #### Mocking apis during the run
 
-You can use [Mockapi](#mockapi) and [Moctokit](https://github.com/kiegroup/mock-github#moctokit) to mock any kind of HTTP and HTTPS requests during your workflow run provided that the client being used honors HTTP_PROXY and HTTPS_PROXY env variables. Depending on the client, for HTTPS they might issue a CONNECT request to open a secure TCP tunnel. In this case `Act` won't be able to mock the HTTPS request.
+> [!WARNING]  
+> Mocking of apis is currently not compatible with Node 18's native `fetch` implementation since it uses `nock` under the hood See [nock/nock#2397](https://github.com/nock/nock/issues/2397)
+
+You can use [Mockapi](#mockapi) and [Moctokit](https://github.com/kiegroup/mock-github#moctokit) to mock any kind of HTTP and HTTPS requests during your workflow run provided that the client being used honors HTTP_PROXY and HTTPS_PROXY env variables. 
+
+> [!Note]  
+> `Act` won't be able to mock HTTPS requests if the client sends a CONNECT request to establish a secure TCP tunnel. So depending on the client, `Act` may or may not be able to mock HTTPS requests see [#52](https://github.com/kiegroup/act-js/issues/52)
 
 ```typescript
 import { Moctokit } from "@kie/mock-github";
