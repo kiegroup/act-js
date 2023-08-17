@@ -25,12 +25,17 @@ export class StepMocker {
     const workflow = await this.readWorkflowFile(filePath);
     for (const job of Object.keys(mockSteps)) {
       for (const mockStep of mockSteps[job]) {
-        const step = this.locateStep(workflow, job, mockStep);
+        const { step, stepIndex } = this.locateStep(workflow, job, mockStep);
         if (step) {
-          if (step.uses) {
-            delete step["uses"];
+          if (typeof mockStep.mockWith === "string") {
+            this.updateStep(workflow, job, stepIndex, {
+              ...step,
+              run: mockStep.mockWith,
+              uses: undefined,
+            });
+          } else {
+            this.updateStep(workflow, job, stepIndex, mockStep.mockWith);
           }
-          step.run = mockStep.mockWith;
         } else {
           throw new Error("Could not find step");
         }
@@ -39,12 +44,35 @@ export class StepMocker {
     return this.writeWorkflowFile(filePath, workflow);
   }
 
+  private updateStep(
+    workflow: GithubWorkflow,
+    jobId: string,
+    stepIndex: number,
+    newStep: GithubWorkflowStep
+  ) {
+    if (workflow.jobs[jobId]) {
+      const oldStep = workflow.jobs[jobId].steps[stepIndex];
+      const updatedStep = { ...oldStep, ...newStep };
+
+      for (const key of Object.keys(oldStep)) {
+        if (key === "env" || key === "with") {
+          updatedStep[key] = {
+            ...oldStep[key],
+            ...(newStep[key] ?? {}),
+          };
+        }
+      }
+
+      workflow.jobs[jobId].steps[stepIndex] = updatedStep;
+    }
+  }
+
   private locateStep(
     workflow: GithubWorkflow,
     jobId: string,
     step: StepIdentifier
-  ): GithubWorkflowStep | undefined {
-    return workflow.jobs[jobId]?.steps.find(s => {
+  ): { stepIndex: number; step: GithubWorkflowStep | undefined } {
+    const index = workflow.jobs[jobId]?.steps.findIndex(s => {
       if (isStepIdentifierUsingId(step)) {
         return step.id === s.id;
       }
@@ -62,6 +90,11 @@ export class StepMocker {
       }
       return false;
     });
+
+    return {
+      stepIndex: index,
+      step: index > -1 ? workflow.jobs[jobId]?.steps[index] : undefined,
+    };
   }
 
   private getWorkflowPath(): string {

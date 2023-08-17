@@ -19,6 +19,36 @@ export type GithubWorkflowStep = {
    */
   run?: string;
 
+  /**
+   * A map of the input parameters defined by the action.
+   */
+  with?: Record<string, string | number | boolean | undefined>;
+
+  /**
+   * Sets variables for the step to use during execution.
+   */
+  env?: Record<string, string | number | boolean | undefined>;
+
+  /**
+   * Override the default shell settings in the runner's operating system using the shell keyword.
+   */
+  shell?: string
+
+  /**
+   * Specify the working directory of where to run the command.
+   */
+  "working-directory"?: string;
+
+  /**
+   * Prevents a job from failing when a step fails. Set to true to allow a job to pass when this step fails.
+   */
+  "continue-on-error"?: string;
+
+  /**
+   * The maximum number of minutes to run the step before killing the process.
+   */
+  "timeout-minutes"?: string;
+
   [k: string]: unknown;
 };
 
@@ -57,10 +87,11 @@ export type MockStep = {
   [job: string]: StepIdentifier[];
 };
 
-export type StepIdentifierUsingName = { name: string; mockWith: string };
-export type StepIdentifierUsingId = { id: string; mockWith: string };
-export type StepIdentifierUsingUses = { uses: string; mockWith: string };
-export type StepIdentifierUsingRun = { run: string; mockWith: string };
+// added string type to mockWith for backward compatibility
+export type StepIdentifierUsingName = { name: string; mockWith: GithubWorkflowStep | string };
+export type StepIdentifierUsingId = { id: string; mockWith: GithubWorkflowStep | string };
+export type StepIdentifierUsingUses = { uses: string; mockWith: GithubWorkflowStep | string };
+export type StepIdentifierUsingRun = { run: string; mockWith: GithubWorkflowStep | string };
 export type StepIdentifier =
   | StepIdentifierUsingName
   | StepIdentifierUsingId
