@@ -285,9 +285,6 @@ let result = await act.runEventAndJob("pull_request", "jobId");
 
 #### Mocking apis during the run
 
-> [!WARNING]  
-> Mocking of apis is currently not compatible with Node 18's native `fetch` implementation since it uses `nock` under the hood See [nock/nock#2397](https://github.com/nock/nock/issues/2397)
-
 You can use [Mockapi](#mockapi) and [Moctokit](https://github.com/kiegroup/mock-github#moctokit) to mock any kind of HTTP and HTTPS requests during your workflow run provided that the client being used honors HTTP_PROXY and HTTPS_PROXY env variables. 
 
 > [!Note]  
@@ -431,6 +428,9 @@ Each run returns an array of `Step` objects that describes what was executed, wh
 ```
 
 ## Mockapi
+
+> [!WARNING]  
+> Mocking of apis is currently not compatible with Node 18's native `fetch` implementation since it uses `nock` under the hood See [nock/nock#2397](https://github.com/nock/nock/issues/2397)
 
 Provides a simple interface to mock any api schema that you define.
 
