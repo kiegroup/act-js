@@ -59,14 +59,14 @@ This does not apply when you are using it as a programmable interface.
 Use locally with npm scripts
 
 ```
-npm i act-js
+npm i @kie/act-js
 npx act-js --version
 ```
 
 Use globally
 
 ```
-npm i -g act-js
+npm i -g @kie/act-js
 act-js --version
 ```
 
