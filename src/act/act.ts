@@ -300,10 +300,10 @@ export class Act {
     }
 
     if (opts?.artifactServer) {
-      actArguments.push(
-        "--artifact-server-path", opts?.artifactServer.path,
-        "--artifact-server-port", opts?.artifactServer.port
-      );
+      actArguments.push("--artifact-server-path", opts?.artifactServer.path);
+      if (opts.artifactServer.port) {
+        actArguments.push("--artifact-server-port", opts?.artifactServer.port);
+      }
     }
 
     if (opts?.bind) {
