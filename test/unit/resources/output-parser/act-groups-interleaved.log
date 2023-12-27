@@ -1,0 +1,13 @@
+[Build/Tests            ] ⭐ Run Main Testing
+[Build/Tests            ]   ❓  ::group::Unit Tests
+[Build/Tests            ]   | 1231 tests executed.
+[Build/Static Analysis  ] ⭐ Run Main Lint
+[Build/Static Analysis  ]   ❓  ::group::Lint
+[Build/Tests            ]   ❓  ::endgroup::
+[Build/Static Analysis  ]   | No linting errors found.
+[Build/Tests            ]   ❓  ::group::Integration Tests
+[Build/Tests            ]   | 32 tests executed.
+[Build/Tests            ]   ❓  ::endgroup::
+[Build/Tests            ]   ✅  Success - Main Testing
+[Build/Static Analysis  ]   ❓  ::endgroup::
+[Build/Static Analysis  ]   ✅  Success - Main Lint

@@ -13,14 +13,14 @@ export class OutputParser {
   // keep track of groups for the current step of a job
   private groupMatrix: Record<string, Group[]>;
 
-  private isPartOfGroup: boolean;
+  private isPartOfGroup: Record<string, boolean>;
 
   constructor(output: string) {
     this.output = output;
     this.stepMatrix = {};
     this.outputMatrix = {};
     this.groupMatrix = {};
-    this.isPartOfGroup = false;
+    this.isPartOfGroup = {};
   }
 
   /**
@@ -140,7 +140,7 @@ export class OutputParser {
     // if the line is an output line
     if (stepOutputMatcherResult !== null) {
       // if output is part of some group then update it
-      if (this.isPartOfGroup) {
+      if (this.isPartOfGroup[stepOutputMatcherResult[1]]) {
         const length = this.groupMatrix[stepOutputMatcherResult[1]].length;
         this.groupMatrix[stepOutputMatcherResult[1]][length - 1].output +=
           stepOutputMatcherResult[2] + "\n";
@@ -167,7 +167,7 @@ export class OutputParser {
         name: startGroupMatcherResult[2],
         output: "",
       });
-      this.isPartOfGroup = true;
+      this.isPartOfGroup[startGroupMatcherResult[1]] = true;
     }
   }
 
@@ -187,7 +187,7 @@ export class OutputParser {
       const length = this.groupMatrix[endGroupMatcherResult[1]].length;
       this.groupMatrix[endGroupMatcherResult[1]][length - 1].output =
         this.groupMatrix[endGroupMatcherResult[1]][length - 1].output.trim();
-      this.isPartOfGroup = false;
+      this.isPartOfGroup[endGroupMatcherResult[1]] = false;
     }
   }
 
