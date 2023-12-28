@@ -27,7 +27,7 @@ export type RunOpts = {
   workflowFile?: string;
   artifactServer?: {
     path: string;
-    port: string;
+    port?: string;
   };
   mockApi?: ResponseMocker<unknown, number>[];
   mockSteps?: MockStep;
