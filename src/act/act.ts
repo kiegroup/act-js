@@ -17,6 +17,7 @@ export class Act {
   private secrets: ArgumentMap<string>;
   private cwd: string;
   private workflowFile: string;
+  private vars: ArgumentMap<string>;
   private env: ArgumentMap<string>;
   private matrix: ArgumentMap<string[]>;
   private platforms: ArgumentMap<string>;
@@ -28,6 +29,7 @@ export class Act {
     this.secrets = new ArgumentMap<string>("-s");
     this.cwd = cwd ?? process.cwd();
     this.workflowFile = workflowFile ?? this.cwd;
+    this.vars = new ArgumentMap<string>("--var");
     this.env = new ArgumentMap<string>("--env");
     this.matrix = new ArgumentMap<string[]>("--matrix", ":");
     this.platforms = new ArgumentMap<string>("--platform");
@@ -60,6 +62,21 @@ export class Act {
 
   clearSecret() {
     this.secrets.map.clear();
+    return this;
+  }
+
+  setVar(key: string, val: string) {
+    this.vars.map.set(key, val);
+    return this;
+  }
+
+  deleteVar(key: string) {
+    this.vars.map.delete(key);
+    return this;
+  }
+
+  clearVar() {
+    this.vars.map.clear();
     return this;
   }
 
@@ -339,6 +356,7 @@ export class Act {
    */
   private async run(cmd: string[], opts?: RunOpts): Promise<Step[]> {
     const { cwd, actArguments, proxy } = await this.parseRunOpts(opts);
+    const vars = this.vars.toActArguments();
     const env = this.env.toActArguments();
     const secrets = this.secrets.toActArguments();
     const input = this.input.toActArguments();
@@ -351,6 +369,7 @@ export class Act {
       opts?.logFile,
       ...cmd,
       ...secrets,
+      ...vars,
       ...env,
       ...input,
       ...event,
