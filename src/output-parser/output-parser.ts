@@ -10,6 +10,8 @@ export class OutputParser {
   // keep track of output for the current step of a job
   private outputMatrix: Record<string, string>;
 
+  private outputsMatrix: Record<string, Record<string, string>>;
+
   // keep track of groups for the current step of a job
   private groupMatrix: Record<string, Group[]>;
 
@@ -19,6 +21,7 @@ export class OutputParser {
     this.output = output;
     this.stepMatrix = {};
     this.outputMatrix = {};
+    this.outputsMatrix = {};
     this.groupMatrix = {};
     this.isPartOfGroup = {};
   }
@@ -37,6 +40,7 @@ export class OutputParser {
       this.parseStartGroup(line);
       this.parseEndGroup(line);
       this.parseStepOutput(line);
+      this.parseStepOutputs(line);
     }
 
     const result: Step[] = [];
@@ -63,6 +67,7 @@ export class OutputParser {
       if (!this.stepMatrix[runMatcherResult[1]]) {
         this.stepMatrix[runMatcherResult[1]] = {};
         this.outputMatrix[runMatcherResult[1]] = "";
+        this.outputsMatrix[runMatcherResult[1]] = {};
         this.groupMatrix[runMatcherResult[1]] = [];
       }
 
@@ -94,6 +99,7 @@ export class OutputParser {
           ],
           status: 0,
           output: this.outputMatrix[successMatcherResult[1]].trim(),
+          outputs: this.outputsMatrix[successMatcherResult[1]],
           // only add groups attribute if there are any. don't add empty array
           ...(groups.length > 0 ? { groups } : {}),
         };
@@ -121,6 +127,7 @@ export class OutputParser {
           ],
           status: 1,
           output: this.outputMatrix[failureMatcherResult[1]].trim(),
+          outputs: this.outputsMatrix[failureMatcherResult[1]],
         };
 
       this.resetOutputAndGroupMatrix(failureMatcherResult[1]);
@@ -147,6 +154,21 @@ export class OutputParser {
       }
       this.outputMatrix[stepOutputMatcherResult[1]] +=
         stepOutputMatcherResult[2] + "\n";
+    }
+  }
+
+  /**
+   * Check if the line contains a set-output annotation. If it does then parse 
+   * and store the output
+   * @param line
+   */
+  private parseStepOutputs(line: string) {
+    const stepOutputsMatcher = /^\s*(\[.+\])\s*\u2699\s*::set-output::\s*(.*)=(.*)/;
+    const stepOutputsMatcherResult = stepOutputsMatcher.exec(line);
+
+    // if the line is an output line
+    if (stepOutputsMatcherResult !== null) {
+      this.outputsMatrix[stepOutputsMatcherResult[1]][stepOutputsMatcherResult[2]] = stepOutputsMatcherResult[3];
     }
   }
 
