@@ -17,7 +17,11 @@ export class ActionInput {
   toActArguments() {
     if (Object.keys(this.event.event).length > 0) {
       const eventCopy = { ...this.event.event };
-      eventCopy.inputs = Object.fromEntries(this.input.map);
+      // Merge inputs with existing event entries
+      eventCopy.inputs = { 
+        ...(eventCopy.inputs || {}), 
+        ...Object.fromEntries(this.input.map) 
+      };
       this.event.event = eventCopy;
       return [];
     } else {
