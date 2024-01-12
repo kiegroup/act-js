@@ -144,12 +144,13 @@ describe("http", () => {
     const response = await executeFile(
       `
     const axios = require("axios");
-    axios.get("http://redhat.com/").then(d => console.log(d.status))
+    axios.get("http://redhat.com/").then(d => console.log(JSON.stringify({status: d.status})));
     `,
       ip
     );
-
-    expect(response.trim()).toBe("200");
+    expect(JSON.parse(response.trim())).toStrictEqual({
+      status: 200
+    });
   });
 
   test("mock with CONNECT request", async () => {
