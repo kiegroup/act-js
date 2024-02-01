@@ -29,19 +29,24 @@ export class StepMocker {
   async mock(mockSteps: MockStep) {
     const filePath = this.getWorkflowPath();
     const workflow = await this.readWorkflowFile(filePath);
-    for (const job of Object.keys(mockSteps)) {
-      for (const mockStep of mockSteps[job]) {
-        const { step, stepIndex } = this.locateStep(workflow, job, mockStep);
+    for (const jobId of Object.keys(mockSteps)) {
+      const stepsToAdd = [];
+      for (const mockStep of mockSteps[jobId]) {
+        const { step, stepIndex } = this.locateStep(workflow, jobId, mockStep);
         if (step) {
           if (isStepIdentifierUsingBeforeOrAfter(mockStep)) {
-            this.addStep(workflow, job, stepIndex, mockStep);
+            // need to adjust the step index if there were elements added previously
+            const adjustIndex: number = stepsToAdd.filter(s => s.stepIndex < stepIndex).length;
+            // we will only actually add the steps at the end so as to avoid indexing errors in subsequent add steps
+            stepsToAdd.push({jobId, stepIndex: stepIndex + adjustIndex, mockStep});
           } else {
-            this.updateStep(workflow, job, stepIndex, mockStep);
+            this.updateStep(workflow, jobId, stepIndex, mockStep);
           }
         } else {
           throw new Error("Could not find step");
         }
       }
+      stepsToAdd.forEach(s => this.addStep(workflow, s.jobId, s.stepIndex, s.mockStep));
     }
     return this.writeWorkflowFile(filePath, workflow);
   }
@@ -62,7 +67,7 @@ export class StepMocker {
             ? workflow.jobs[jobId].steps.length
             : indexToInsertAt + 1;
       }
-      workflow.jobs[jobId].steps.splice(indexToInsertAt, 0, mockStep.mockWith);
+      workflow.jobs[jobId].steps.splice(indexToInsertAt, 0, {...mockStep.mockWith});
     }
   }
 

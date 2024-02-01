@@ -368,3 +368,105 @@ describe("update step", () => {
     });
   });
 });
+
+describe("add step", () => {
+  beforeEach(() => {
+    existsSyncMock.mockReturnValueOnce(true);
+    writeFileSyncMock.mockReturnValueOnce(undefined);
+  });
+  test.each([
+    ["index", 0, 0],
+    ["name", "secrets", 0]
+  ])("step found using before: %p", async (_title, before, index) => {
+    const data = await readFile(path.join(resources, "steps.yaml"), "utf8");
+    readFileSyncMock.mockReturnValueOnce(data);
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    const mockWith = {
+      name: "added new step",
+      run: "echo new step"
+    };
+    await stepMocker.mock({
+      name: [
+        {
+          before,
+          mockWith,
+        },
+      ],
+    });
+    const outputWorkflow = parse(data) as GithubWorkflow;
+    outputWorkflow.jobs["name"].steps.splice(index, 0, mockWith); 
+    expect(writeFileSyncMock).toHaveBeenLastCalledWith(
+      path.join(__dirname, "workflow.yaml"),
+      stringify(outputWorkflow),
+      "utf8"
+    );
+  });
+
+  test.each([
+    ["index", 3, 4],
+    ["name", "secrets", 2]
+  ])("step found using after: %p", async (_title, after, index) => {
+    const data = await readFile(path.join(resources, "steps.yaml"), "utf8");
+    readFileSyncMock.mockReturnValueOnce(data);
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    const mockWith = {
+      name: "added new step",
+      run: "echo new step"
+    };
+    await stepMocker.mock({
+      name: [
+        {
+          after,
+          mockWith,
+        },
+      ],
+    });
+    const outputWorkflow = parse(data) as GithubWorkflow;
+    outputWorkflow.jobs["name"].steps.splice(index, 0, mockWith); 
+    expect(writeFileSyncMock).toHaveBeenLastCalledWith(
+      path.join(__dirname, "workflow.yaml"),
+      stringify(outputWorkflow),
+      "utf8"
+    );
+  });
+
+  test("multiple add steps with indexing", async () => {
+    const data = await readFile(path.join(resources, "steps.yaml"), "utf8");
+    readFileSyncMock.mockReturnValueOnce(data);
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    const mockWith = {
+      name: "added new step",
+      run: "echo new step"
+    };
+    await stepMocker.mock({
+      name: [
+        {
+          after: 1,
+          mockWith
+        },
+        {
+          before: 0,
+          mockWith,
+        },
+        {
+          before: 2,
+          mockWith
+        },
+        {
+          index: 3,
+          mockWith: "echo updated"
+        }
+      ],
+    });
+    const outputWorkflow = parse(data) as GithubWorkflow;
+    outputWorkflow.jobs["name"].steps[ outputWorkflow.jobs["name"].steps.length - 1].run = "echo updated";
+    outputWorkflow.jobs["name"].steps.splice(0, 0, {...mockWith});
+    outputWorkflow.jobs["name"].steps.splice(3, 0, {...mockWith}); 
+    outputWorkflow.jobs["name"].steps.splice(3, 0, {...mockWith}); 
+    expect(writeFileSyncMock).toHaveBeenLastCalledWith(
+      path.join(__dirname, "workflow.yaml"),
+      stringify(outputWorkflow),
+      "utf8"
+    );
+  });
+});

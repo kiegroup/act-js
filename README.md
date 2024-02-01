@@ -423,7 +423,6 @@ Schema for `mockSteps`
 
 **Important Notes**: 
 - Please use `MockGithub` to run the workflow in a clean safe github repository so that any changes made to the Workflow file are done in the test environment and not to the actual file.
-- Using `before` or `after` will cause changes in the indexing of the steps which will impact the subsequent mock steps that use `before`, `after` or `index`. 
 
 #### Run result
 
