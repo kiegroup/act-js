@@ -1,12 +1,18 @@
 import {
   GithubWorkflow,
   GithubWorkflowStep,
+  isStepIdentifierUsingAfter,
+  isStepIdentifierUsingBefore,
+  isStepIdentifierUsingBeforeOrAfter,
   isStepIdentifierUsingId,
+  isStepIdentifierUsingIndex,
   isStepIdentifierUsingName,
   isStepIdentifierUsingRun,
   isStepIdentifierUsingUses,
   MockStep,
   StepIdentifier,
+  StepIdentifierUsingAfter,
+  StepIdentifierUsingBefore,
 } from "@aj/step-mocker/step-mocker.types";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
@@ -23,35 +29,64 @@ export class StepMocker {
   async mock(mockSteps: MockStep) {
     const filePath = this.getWorkflowPath();
     const workflow = await this.readWorkflowFile(filePath);
-    for (const job of Object.keys(mockSteps)) {
-      for (const mockStep of mockSteps[job]) {
-        const { step, stepIndex } = this.locateStep(workflow, job, mockStep);
+    for (const jobId of Object.keys(mockSteps)) {
+      const stepsToAdd = [];
+      for (const mockStep of mockSteps[jobId]) {
+        const { step, stepIndex } = this.locateStep(workflow, jobId, mockStep);
         if (step) {
-          if (typeof mockStep.mockWith === "string") {
-            this.updateStep(workflow, job, stepIndex, {
-              ...step,
-              run: mockStep.mockWith,
-              uses: undefined,
-            });
+          if (isStepIdentifierUsingBeforeOrAfter(mockStep)) {
+            // need to adjust the step index if there were elements added previously
+            const adjustIndex: number = stepsToAdd.filter(s => s.stepIndex < stepIndex).length;
+            // we will only actually add the steps at the end so as to avoid indexing errors in subsequent add steps
+            stepsToAdd.push({jobId, stepIndex: stepIndex + adjustIndex, mockStep});
           } else {
-            this.updateStep(workflow, job, stepIndex, mockStep.mockWith);
+            this.updateStep(workflow, jobId, stepIndex, mockStep);
           }
         } else {
           throw new Error("Could not find step");
         }
       }
+      stepsToAdd.forEach(s => this.addStep(workflow, s.jobId, s.stepIndex, s.mockStep));
     }
     return this.writeWorkflowFile(filePath, workflow);
+  }
+
+  private addStep(
+    workflow: GithubWorkflow,
+    jobId: string,
+    stepIndex: number,
+    mockStep: StepIdentifierUsingAfter | StepIdentifierUsingBefore
+  ) {
+    if (workflow.jobs[jobId]) {
+      let indexToInsertAt = stepIndex;
+      if (isStepIdentifierUsingBefore(mockStep)) {
+        indexToInsertAt = stepIndex <= 0 ? 0 : indexToInsertAt - 1;
+      } else {
+        indexToInsertAt =
+          stepIndex >= workflow.jobs[jobId].steps.length - 1
+            ? workflow.jobs[jobId].steps.length
+            : indexToInsertAt + 1;
+      }
+      workflow.jobs[jobId].steps.splice(indexToInsertAt, 0, {...mockStep.mockWith});
+    }
   }
 
   private updateStep(
     workflow: GithubWorkflow,
     jobId: string,
     stepIndex: number,
-    newStep: GithubWorkflowStep
+    mockStep: StepIdentifier
   ) {
     if (workflow.jobs[jobId]) {
       const oldStep = workflow.jobs[jobId].steps[stepIndex];
+      const newStep =
+        typeof mockStep.mockWith === "string"
+          ? {
+              ...oldStep,
+              run: mockStep.mockWith,
+              uses: undefined,
+            }
+          : mockStep.mockWith;
       const updatedStep = { ...oldStep, ...newStep };
 
       for (const key of Object.keys(oldStep)) {
@@ -72,7 +107,7 @@ export class StepMocker {
     jobId: string,
     step: StepIdentifier
   ): { stepIndex: number; step: GithubWorkflowStep | undefined } {
-    const index = workflow.jobs[jobId]?.steps.findIndex(s => {
+    const index = workflow.jobs[jobId]?.steps.findIndex((s, index) => {
       if (isStepIdentifierUsingId(step)) {
         return step.id === s.id;
       }
@@ -87,6 +122,22 @@ export class StepMocker {
 
       if (isStepIdentifierUsingRun(step)) {
         return step.run === s.run;
+      }
+
+      if (isStepIdentifierUsingIndex(step)) {
+        return step.index === index;
+      }
+
+      if (isStepIdentifierUsingBefore(step)) {
+        return typeof step.before === "string"
+          ? [s.id, s.name, s.uses, s.run].includes(step.before)
+          : step.before === index;
+      }
+
+      if (isStepIdentifierUsingAfter(step)) {
+        return typeof step.after === "string"
+          ? [s.id, s.name, s.uses, s.run].includes(step.after)
+          : step.after === index;
       }
       return false;
     });

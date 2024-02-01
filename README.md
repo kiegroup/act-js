@@ -404,12 +404,25 @@ Schema for `mockSteps`
     {
       run: "locates the step using the run field"
       mockWith: "command or a new step as JSON to replace the given step with"
+    } |
+    {
+      index: "locates the step using the index (0 indexed) in the steps array of the workflow"
+      mockWith: "command or a new step as JSON to replace the given step with"
+    } |
+    {
+      before: "index of the step or the id/name/run/uses of the step before which you want to insert a step"
+      mockWith: "a new step as JSON to be added before the given step"
+    } |
+    {
+      after: "index of the step or the id/name/run/uses of the step after which you want to insert a step"
+      mockWith: "a new step as JSON to be added after the given step"
     }
   )[]
 }
 ```
 
-NOTE: Please use `MockGithub` to run the workflow in a clean safe github repository so that any changes made to the Workflow file are done in the test environment and not to the actual file.
+**Important Notes**: 
+- Please use `MockGithub` to run the workflow in a clean safe github repository so that any changes made to the Workflow file are done in the test environment and not to the actual file.
 
 #### Run result
 

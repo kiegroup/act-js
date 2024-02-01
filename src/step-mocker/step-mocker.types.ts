@@ -92,11 +92,18 @@ export type StepIdentifierUsingName = { name: string; mockWith: GithubWorkflowSt
 export type StepIdentifierUsingId = { id: string; mockWith: GithubWorkflowStep | string };
 export type StepIdentifierUsingUses = { uses: string; mockWith: GithubWorkflowStep | string };
 export type StepIdentifierUsingRun = { run: string; mockWith: GithubWorkflowStep | string };
+export type StepIdentifierUsingIndex = { index: number; mockWith: GithubWorkflowStep | string };
+export type StepIdentifierUsingBefore = { before: number | string; mockWith: GithubWorkflowStep };
+export type StepIdentifierUsingAfter = { after: number | string; mockWith: GithubWorkflowStep };
+
 export type StepIdentifier =
   | StepIdentifierUsingName
   | StepIdentifierUsingId
   | StepIdentifierUsingUses
-  | StepIdentifierUsingRun;
+  | StepIdentifierUsingRun
+  | StepIdentifierUsingIndex
+  | StepIdentifierUsingBefore
+  | StepIdentifierUsingAfter;
 
 export function isStepIdentifierUsingName(
   step: StepIdentifier
@@ -118,6 +125,30 @@ export function isStepIdentifierUsingUses(
 
 export function isStepIdentifierUsingRun(
   step: StepIdentifier
-): step is StepIdentifierUsingUses {
+): step is StepIdentifierUsingRun {
   return Object.prototype.hasOwnProperty.call(step, "run");
+}
+
+export function isStepIdentifierUsingIndex(
+  step: StepIdentifier
+): step is StepIdentifierUsingIndex {
+  return Object.prototype.hasOwnProperty.call(step, "index");
+}
+
+export function isStepIdentifierUsingBefore(
+  step: StepIdentifier
+): step is StepIdentifierUsingBefore {
+  return Object.prototype.hasOwnProperty.call(step, "before");
+}
+
+export function isStepIdentifierUsingAfter(
+  step: StepIdentifier
+): step is StepIdentifierUsingAfter {
+  return Object.prototype.hasOwnProperty.call(step, "after");
+}
+
+export function isStepIdentifierUsingBeforeOrAfter(
+  step: StepIdentifier
+): step is StepIdentifierUsingBefore | StepIdentifierUsingAfter  {
+  return isStepIdentifierUsingBefore(step) || isStepIdentifierUsingAfter(step);
 }
