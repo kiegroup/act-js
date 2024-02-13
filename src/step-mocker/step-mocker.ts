@@ -43,7 +43,7 @@ export class StepMocker {
             this.updateStep(workflow, jobId, stepIndex, mockStep);
           }
         } else {
-          const { mockWith, ...stepQuery } = mockStep;
+          const { mockWith: _, ...stepQuery } = mockStep;
           throw new Error(`Could not find step ${JSON.stringify(stepQuery)} in job ${jobId}\nin ${filePath}`);
         }
       }
