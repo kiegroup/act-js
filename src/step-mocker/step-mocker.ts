@@ -43,7 +43,8 @@ export class StepMocker {
             this.updateStep(workflow, jobId, stepIndex, mockStep);
           }
         } else {
-          throw new Error("Could not find step");
+          const { mockWith: _, ...stepQuery } = mockStep;
+          throw new Error(`Could not find step ${JSON.stringify(stepQuery)} in job ${jobId}\nin ${filePath}`);
         }
       }
       stepsToAdd.forEach(s => this.addStep(workflow, s.jobId, s.stepIndex, s.mockStep));

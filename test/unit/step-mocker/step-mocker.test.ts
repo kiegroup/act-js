@@ -103,7 +103,8 @@ describe("locateSteps", () => {
     existsSyncMock.mockReturnValueOnce(true);
     writeFileSyncMock.mockReturnValueOnce(undefined);
   });
-  test("no job found", async () => {
+
+  test("no job found using wrong name", async () => {
     readFileSyncMock.mockReturnValueOnce(
       await readFile(path.join(resources, "steps.yaml"), "utf8")
     );
@@ -117,7 +118,7 @@ describe("locateSteps", () => {
           },
         ],
       })
-    ).rejects.toThrowError();
+    ).rejects.toThrowError(`Could not find step {"name":"step"} in job incorrectName\nin ${path.join(__dirname, "workflow.yaml")}`);
   });
 
   test("step found using id", async () => {
@@ -142,6 +143,23 @@ describe("locateSteps", () => {
     );
   });
 
+  test("no step found using incorrect id", async () => {
+    readFileSyncMock.mockReturnValueOnce(
+        await readFile(path.join(resources, "steps.yaml"), "utf8")
+    );
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    await expect(
+        stepMocker.mock({
+          name: [
+            {
+              id: "not-echo",
+              mockWith: "echo step",
+            },
+          ],
+        })
+    ).rejects.toThrowError(`Could not find step {"id":"not-echo"} in job name\nin ${path.join(__dirname, "workflow.yaml")}`);
+  });
+
   test("step found using name", async () => {
     const data = await readFile(path.join(resources, "steps.yaml"), "utf8");
     readFileSyncMock.mockReturnValueOnce(data);
@@ -160,6 +178,23 @@ describe("locateSteps", () => {
       workflow,
       "utf8"
     );
+  });
+
+  test("no step found using incorrect name", async () => {
+    readFileSyncMock.mockReturnValueOnce(
+        await readFile(path.join(resources, "steps.yaml"), "utf8")
+    );
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    await expect(
+        stepMocker.mock({
+          name: [
+            {
+              name: "Incorrect Name",
+              mockWith: "echo step",
+            },
+          ],
+        })
+    ).rejects.toThrowError(`Could not find step {"name":"Incorrect Name"} in job name\nin ${path.join(__dirname, "workflow.yaml")}`);
   });
 
   test("step found using uses", async () => {
@@ -184,6 +219,23 @@ describe("locateSteps", () => {
     );
   });
 
+  test("no step found using incorrect uses", async () => {
+    readFileSyncMock.mockReturnValueOnce(
+        await readFile(path.join(resources, "steps.yaml"), "utf8")
+    );
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    await expect(
+        stepMocker.mock({
+          name: [
+            {
+              uses: "invalid/action@v0",
+              mockWith: "echo step",
+            },
+          ],
+        })
+    ).rejects.toThrowError(`Could not find step {"uses":"invalid/action@v0"} in job name\nin ${path.join(__dirname, "workflow.yaml")}`);
+  });
+
   test("step found using run", async () => {
     const data = await readFile(path.join(resources, "steps.yaml"), "utf8");
     readFileSyncMock.mockReturnValueOnce(data);
@@ -203,7 +255,24 @@ describe("locateSteps", () => {
       "utf8"
     );
   });
-  
+
+  test("no step found using incorrect run", async () => {
+    readFileSyncMock.mockReturnValueOnce(
+        await readFile(path.join(resources, "steps.yaml"), "utf8")
+    );
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    await expect(
+        stepMocker.mock({
+          name: [
+            {
+              run: "echo incorrect",
+              mockWith: "echo step",
+            },
+          ],
+        })
+    ).rejects.toThrowError(`Could not find step {"run":"echo incorrect"} in job name\nin ${path.join(__dirname, "workflow.yaml")}`);
+  });
+
   test("step found using index", async () => {
     const data = await readFile(path.join(resources, "steps.yaml"), "utf8");
     readFileSyncMock.mockReturnValueOnce(data);
@@ -222,6 +291,23 @@ describe("locateSteps", () => {
       workflow,
       "utf8"
     );
+  });
+
+  test("no step found using incorrect index", async () => {
+    readFileSyncMock.mockReturnValueOnce(
+        await readFile(path.join(resources, "steps.yaml"), "utf8")
+    );
+    const stepMocker = new StepMocker("workflow.yaml", __dirname);
+    await expect(
+        stepMocker.mock({
+          name: [
+            {
+              index: 42,
+              mockWith: "echo step",
+            },
+          ],
+        })
+    ).rejects.toThrowError(`Could not find step {"index":42} in job name\nin ${path.join(__dirname, "workflow.yaml")}`);
   });
 
   test.each([
