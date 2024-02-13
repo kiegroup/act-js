@@ -35,7 +35,7 @@
     "test:report": "npm run test:unit -- --coverage --testResultsProcessor=jest-sonar-reporter",
     "pretest:ci": "npm run pretest:it",
     "test:ci": "jest ./test/ci/",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "file": "ts-node",
     "prepare": "husky install",
