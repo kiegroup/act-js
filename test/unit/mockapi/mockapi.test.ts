@@ -12,7 +12,7 @@ describe("from file", () => {
     mockapi.mock.google.root
       .get({ search: /test.*/ })
       .reply({ status: 200, data: { message: "worked" } });
-    const { status, data, invalid } = await axios.get(
+    const { status, data } = await axios.get(
       "https://google.com/?search=test123"
     );
     expect(status).toBe(200);
