@@ -26,7 +26,7 @@
     "nektos/act"
   ],
   "scripts": {
-    "postinstall": "node scripts/postinstall.js 0.2.48",
+    "postinstall": "node scripts/postinstall.js 0.2.61",
     "build": "tsc && tsc-alias",
     "pretest:it": "npm run postinstall && mkdir -p bin && cp build/bin/* bin/",
     "test": "npm run test:unit && npm run test:it",
