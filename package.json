@@ -67,7 +67,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@kie/mock-github": "^2.0.0",
+    "@kie/mock-github": "^3.0.0-beta.1",
     "adm-zip": "^0.5.10",
     "ajv": "^8.12.0",
     "bin-links": "^4.0.1",
@@ -75,6 +75,9 @@
     "follow-redirects": "^1.15.2",
     "tar": "^6.1.13",
     "yaml": "^2.1.3"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "jestSonar": {
     "reportPath": "coverage"

@@ -1,5 +1,14 @@
 # act-js
 
+> **Notice**
+>
+> We have introduced experimental support for fetch in mock-github. This is a release of act-js with the beta version of mock-github. You can install it by:
+>
+> ```
+> npm install @kie/act-js@beta
+> ```
+
+
 Installs [nektos/act](https://github.com/nektos/act) and provides access to it as a CLI as well as an API
 
 ## Table of Content
