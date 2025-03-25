@@ -63,12 +63,12 @@ test("publish workflow", async () => {
 
   expect(result).toMatchObject([
     {
-      name: "Main actions/checkout@v3",
+      name: "Main actions/checkout@v4",
       status: 0,
       output: "",
     },
     {
-      name: "Main actions/setup-node@v3",
+      name: "Main actions/setup-node@v4",
       output: expect.any(String),
       status: 0,
     },
