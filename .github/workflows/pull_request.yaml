@@ -9,6 +9,8 @@ on:
       - '.github/workflows/**'
       - 'test/ci/**'
       - 'jest.config.ts'
+  
+  workflow_dispatch:
 
 jobs:
   unit:
