@@ -77,7 +77,6 @@ test("pull request workflow", async () => {
     status: 0,
   },
   { name: "Main Install packages", status: 0, output: expect.any(String) },
-  { name: "Main Build package", status: 0, output: expect.any(String) },
   { name: "Main Test", status: 0, output: "ran tests" },
   {
     name: "Post actions/setup-node@v4",
