@@ -54,7 +54,7 @@ afterEach(async () => {
 test("pull request workflow", async () => {
 
   const act = new Act(github.repo.getPath("pull_request"));
-  const result = await act.setMatrix("node-version", ["20.x, 22.x"]).runJob("unit", {
+  const result = await act.setMatrix("node-version", ["16.x"]).runJob("unit", {
     mockSteps: {
       unit: [
         {
