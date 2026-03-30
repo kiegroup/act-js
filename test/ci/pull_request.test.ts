@@ -54,7 +54,7 @@ afterEach(async () => {
 test("pull request workflow", async () => {
 
   const act = new Act(github.repo.getPath("pull_request"));
-  const result = await act.setMatrix("node-version", ["16.x"]).runJob("unit", {
+  const result = await act.setMatrix("node-version", ["20.x"]).runJob("unit", {
     mockSteps: {
       unit: [
         {
@@ -66,22 +66,22 @@ test("pull request workflow", async () => {
   });
 
   expect(result).toMatchObject([
-    {
-      name: "Main actions/checkout@v3",
-      status: 0,
-      output: "",
-    },
-    {
-      name: "Main actions/setup-node@v3",
-      output: expect.any(String),
-      status: 0,
-    },
-    { name: "Main Install packages", status: 0, output: expect.any(String) },
-    { name: "Main Test", status: 0, output: "ran tests" },
-    {
-      name: "Post actions/setup-node@v3",
-      output: "",
-      status: 0,
-    }
-  ]);
+  {
+    name: "Main actions/checkout@v4",
+    status: 0,
+    output: "",
+  },
+  {
+    name: "Main actions/setup-node@v4",
+    output: expect.any(String),
+    status: 0,
+  },
+  { name: "Main Install packages", status: 0, output: expect.any(String) },
+  { name: "Main Test", status: 0, output: "ran tests" },
+  {
+    name: "Post actions/setup-node@v4",
+    output: "",
+    status: 0,
+  }
+]);
 });
