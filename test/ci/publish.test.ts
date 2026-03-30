@@ -76,7 +76,7 @@ test("publish workflow", async () => {
     { name: "Main Build package", status: 0, output: expect.any(String) },
     { name: "Main Release", status: 0, output: "ran semantic-release" },
     {
-      name: "Post actions/setup-node@v3",
+      name: "Post actions/setup-node@v4",
       output: "",
       status: 0,
     }
