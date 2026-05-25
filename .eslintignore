@@ -1,6 +1,0 @@
-node_modules/
-build/
-bin/
-coverage/
-scripts/
-jest.config.ts
