@@ -42,7 +42,7 @@
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "file": "ts-node",
-    "prepare": "husky install",
+    "prepare": "husky",
     "lint-staged": "lint-staged"
   },
   "author": "Shubh Bapna <sbapna@redhat.com>",
