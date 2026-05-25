@@ -99,8 +99,12 @@ describe("http", () => {
       console.log(
         JSON.stringify({ axios: axiosResponse.data, octokit: octokitResponse.data })
       );
+      process.exit(0);
     }
-    run();
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
     `,
       ip,
       {
@@ -144,7 +148,15 @@ describe("http", () => {
     const response = await executeFile(
       `
     const axios = require("axios");
-    axios.get("http://redhat.com/").then(d => console.log(JSON.stringify({status: d.status})));
+    async function run() {
+      const d = await axios.get("http://redhat.com/");
+      console.log(JSON.stringify({status: d.status}));
+      process.exit(0);
+    }
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
     `,
       ip
     );
@@ -166,11 +178,19 @@ describe("http", () => {
     const response = await executeFile(
       `
     const {getOctokit} = require("@actions/github")
-    const octokit = getOctokit("token");
-    octokit.rest.repos.get({
-      repo: "kiegroup",
-      owner: "kiegroup",
-    }).then(data => console.log(JSON.stringify({status: data.status, data: data.data})));
+    async function run() {
+      const octokit = getOctokit("token");
+      const data = await octokit.rest.repos.get({
+        repo: "kiegroup",
+        owner: "kiegroup",
+      });
+      console.log(JSON.stringify({status: data.status, data: data.data}));
+      process.exit(0);
+    }
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
     `,
       ip,
       { GITHUB_API_URL: "http://api.github.com" }
@@ -235,7 +255,15 @@ describe("https", () => {
     const response = await executeFile(
       `
     const axios = require("axios");
-    axios.get("https://google.com").then(d => console.log(JSON.stringify({status: d.status, data: d.data})))
+    async function run() {
+      const d = await axios.get("https://google.com");
+      console.log(JSON.stringify({status: d.status, data: d.data}));
+      process.exit(0);
+    }
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
     `,
       ip
     );
@@ -260,22 +288,36 @@ async function executeCurl(
         http_proxy: `http://${ip}`,
         https_proxy: `http://${ip}`,
       },
+      detached: false,
     });
     let data = "";
     let error = "";
-    childProcess.stdout.on("data", chunk => {
+    
+    const cleanup = () => {
+      if (!childProcess.killed) {
+        childProcess.kill();
+      }
+    };
+
+    childProcess.stdout?.on("data", chunk => {
       data += chunk.toString();
     });
-    childProcess.stderr.on("data", chunk => {
+    childProcess.stderr?.on("data", chunk => {
       error += chunk.toString();
     });
 
     childProcess.on("close", code => {
-      if (code === null) {
-        reject(error);
+      cleanup();
+      if (code === null || code !== 0) {
+        reject(error || `Process exited with code ${code}`);
       } else {
         resolve(data);
       }
+    });
+
+    childProcess.on("error", err => {
+      cleanup();
+      reject(err);
     });
   });
 }
@@ -294,22 +336,36 @@ async function executeFile(
         http_proxy: `http://${ip}`,
         https_proxy: `http://${ip}`,
       },
+      detached: false,
     });
     let data = "";
     let error = "";
-    childProcess.stdout.on("data", chunk => {
+    
+    const cleanup = () => {
+      if (!childProcess.killed) {
+        childProcess.kill();
+      }
+    };
+
+    childProcess.stdout?.on("data", chunk => {
       data += chunk.toString();
     });
-    childProcess.stderr.on("data", chunk => {
+    childProcess.stderr?.on("data", chunk => {
       error += chunk.toString();
     });
 
     childProcess.on("close", code => {
-      if (code === null) {
-        reject(error);
+      cleanup();
+      if (code === null || code !== 0) {
+        reject(error || `Process exited with code ${code}`);
       } else {
         resolve(data);
       }
+    });
+
+    childProcess.on("error", err => {
+      cleanup();
+      reject(err);
     });
   });
 }
