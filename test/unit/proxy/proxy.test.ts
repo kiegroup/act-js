@@ -9,10 +9,10 @@ const executeRequestFile = path.join(__dirname, "executeRequest.js");
 
 // Test URL constants
 const TEST_URLS = {
-  GOOGLE: "http://google.com",
-  GITHUB_API: "http://api.github.com",
-  GMAIL: "http://gmail.com",
-  REDHAT: "http://redhat.com",
+  GOOGLE: "https://google.com",
+  GITHUB_API: "https://api.github.com",
+  GMAIL: "https://gmail.com",
+  REDHAT: "https://redhat.com",
 } as const;
 
 // Mock configuration helpers
@@ -276,7 +276,7 @@ describe("https", () => {
     ]);
     const ip = await proxy.start();
 
-    const response = await executeCurl(["-s", "https://google.com"], ip);
+    const response = await executeCurl(["-s", TEST_URLS.GOOGLE], ip);
     expect(response).toMatch(/<HTML><HEAD>.+/);
   });
 
@@ -289,7 +289,7 @@ describe("https", () => {
     const ip = await proxy.start();
 
     const response = await executeFile(
-      createAxiosGetScript("https://google.com"),
+      createAxiosGetScript(TEST_URLS.GOOGLE),
       ip
     );
 
