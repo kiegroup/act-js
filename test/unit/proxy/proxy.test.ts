@@ -7,6 +7,140 @@ import { rmSync, writeFileSync } from "fs";
 
 const executeRequestFile = path.join(__dirname, "executeRequest.js");
 
+// Test URL constants
+const TEST_URLS = {
+  GOOGLE: "https://google.com",
+  GITHUB_API: "https://api.github.com",
+  GMAIL: "https://gmail.com",
+  REDHAT: "https://redhat.com",
+} as const;
+
+// Mock configuration helpers
+function createGoogleMockApi() {
+  return new Mockapi({
+    google: {
+      baseUrl: TEST_URLS.GOOGLE,
+      endpoints: {
+        root: {
+          get: {
+            path: "/",
+            method: "get",
+            parameters: {
+              query: [],
+              path: [],
+              body: [],
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function createGmailMockApi() {
+  return new Mockapi({
+    gmail: {
+      baseUrl: TEST_URLS.GMAIL,
+      endpoints: {
+        root: {
+          get: {
+            path: "/",
+            method: "get",
+            parameters: {
+              query: [],
+              path: [],
+              body: [],
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function createGithubMoctokit() {
+  return new Moctokit(TEST_URLS.GITHUB_API);
+}
+
+// Test script templates
+function createDualRequestScript() {
+  return `
+    const axios = require("axios");
+    const {getOctokit} = require("@actions/github")
+    async function run() {
+      const axiosResponse = await axios.get("${TEST_URLS.GOOGLE}/");
+      const octokit = getOctokit("token");
+      const octokitResponse = await octokit.rest.repos.get({
+        repo: "kiegroup",
+        owner: "kiegroup",
+      });
+      console.log(
+        JSON.stringify({ axios: axiosResponse.data, octokit: octokitResponse.data })
+      );
+      process.exit(0);
+    }
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
+  `;
+}
+
+function createSimpleGetScript(url: string) {
+  return `
+    const axios = require("axios");
+    async function run() {
+      const d = await axios.get("${url}");
+      console.log(JSON.stringify({status: d.status}));
+      process.exit(0);
+    }
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
+  `;
+}
+
+function createOctokitGetScript() {
+  return `
+    const {getOctokit} = require("@actions/github")
+    async function run() {
+      const octokit = getOctokit("token");
+      const data = await octokit.rest.repos.get({
+        repo: "kiegroup",
+        owner: "kiegroup",
+      });
+      console.log(JSON.stringify({status: data.status, data: data.data}));
+      process.exit(0);
+    }
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
+  `;
+}
+
+function createAxiosGetScript(url: string) {
+  return `
+    const axios = require("axios");
+    async function run() {
+      const d = await axios.get("${url}");
+      console.log(JSON.stringify({status: d.status, data: d.data}));
+      process.exit(0);
+    }
+    run().catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
+  `;
+}
+
+// Expected response constants
+const EXPECTED_MOCK_RESPONSE = {
+  axios: { msg: "mocked_response" },
+  octokit: { full_name: "mocked_name" },
+};
+
 afterEach(async () => {
   delete process.env["http_proxy"];
   delete process.env["https_proxy"];
@@ -54,26 +188,9 @@ describe("http", () => {
     await proxy.stop();
   });
 
-  test("mock without CONNECT request", async () => {
-    const mockapi = new Mockapi({
-      google: {
-        baseUrl: "http://google.com",
-        endpoints: {
-          root: {
-            get: {
-              path: "/",
-              method: "get",
-              parameters: {
-                query: [],
-                path: [],
-                body: [],
-              },
-            },
-          },
-        },
-      },
-    });
-    const moctokit = new Moctokit("http://api.github.com");
+  test("mock without CONNECT request", async function testMockWithoutConnect() {
+    const mockapi = createGoogleMockApi();
+    const moctokit = createGithubMoctokit();
 
     proxy = new ForwardProxy([
       mockapi.mock.google.root
@@ -86,53 +203,18 @@ describe("http", () => {
     const ip = await proxy.start();
 
     const response = await executeFile(
-      `
-    const axios = require("axios");
-    const {getOctokit} = require("@actions/github")
-    async function run() {
-      const axiosResponse = await axios.get("http://google.com/");
-      const octokit = getOctokit("token");
-      const octokitResponse = await octokit.rest.repos.get({
-        repo: "kiegroup",
-        owner: "kiegroup",
-      });
-      console.log(
-        JSON.stringify({ axios: axiosResponse.data, octokit: octokitResponse.data })
-      );
-    }
-    run();
-    `,
+      createDualRequestScript(),
       ip,
       {
-        GITHUB_API_URL: "http://api.github.com",
+        GITHUB_API_URL: TEST_URLS.GITHUB_API,
       }
     );
 
-    expect(JSON.parse(response.trim())).toStrictEqual({
-      axios: { msg: "mocked_response" },
-      octokit: { full_name: "mocked_name" },
-    });
+    expect(JSON.parse(response.trim())).toStrictEqual(EXPECTED_MOCK_RESPONSE);
   });
 
   test("do not mock", async () => {
-    const mockapi = new Mockapi({
-      gmail: {
-        baseUrl: "http://gmail.com",
-        endpoints: {
-          root: {
-            get: {
-              path: "/",
-              method: "get",
-              parameters: {
-                query: [],
-                path: [],
-                body: [],
-              },
-            },
-          },
-        },
-      },
-    });
+    const mockapi = createGmailMockApi();
 
     proxy = new ForwardProxy([
       mockapi.mock.gmail.root
@@ -142,19 +224,17 @@ describe("http", () => {
     const ip = await proxy.start();
 
     const response = await executeFile(
-      `
-    const axios = require("axios");
-    axios.get("http://redhat.com/").then(d => console.log(JSON.stringify({status: d.status})));
-    `,
+      createSimpleGetScript(TEST_URLS.REDHAT),
       ip
     );
+    
     expect(JSON.parse(response.trim())).toStrictEqual({
       status: 200
     });
   });
 
   test("mock with CONNECT request", async () => {
-    const moctokit = new Moctokit("http://api.github.com");
+    const moctokit = createGithubMoctokit();
 
     proxy = new ForwardProxy([
       moctokit.rest.repos
@@ -164,16 +244,9 @@ describe("http", () => {
     const ip = await proxy.start();
 
     const response = await executeFile(
-      `
-    const {getOctokit} = require("@actions/github")
-    const octokit = getOctokit("token");
-    octokit.rest.repos.get({
-      repo: "kiegroup",
-      owner: "kiegroup",
-    }).then(data => console.log(JSON.stringify({status: data.status, data: data.data})));
-    `,
+      createOctokitGetScript(),
       ip,
-      { GITHUB_API_URL: "http://api.github.com" }
+      { GITHUB_API_URL: TEST_URLS.GITHUB_API }
     );
 
     expect(JSON.parse(response.trim())).toStrictEqual({
@@ -188,24 +261,7 @@ describe("https", () => {
   let proxy: ForwardProxy;
 
   beforeEach(() => {
-    mockapi = new Mockapi({
-      google: {
-        baseUrl: "http://google.com",
-        endpoints: {
-          root: {
-            get: {
-              path: "/",
-              method: "get",
-              parameters: {
-                query: [],
-                path: [],
-                body: [],
-              },
-            },
-          },
-        },
-      },
-    });
+    mockapi = createGoogleMockApi();
   });
 
   afterEach(async () => {
@@ -220,7 +276,7 @@ describe("https", () => {
     ]);
     const ip = await proxy.start();
 
-    const response = await executeCurl(["-s", "https://google.com"], ip);
+    const response = await executeCurl(["-s", TEST_URLS.GOOGLE], ip);
     expect(response).toMatch(/<HTML><HEAD>.+/);
   });
 
@@ -233,10 +289,7 @@ describe("https", () => {
     const ip = await proxy.start();
 
     const response = await executeFile(
-      `
-    const axios = require("axios");
-    axios.get("https://google.com").then(d => console.log(JSON.stringify({status: d.status, data: d.data})))
-    `,
+      createAxiosGetScript(TEST_URLS.GOOGLE),
       ip
     );
 
@@ -260,22 +313,36 @@ async function executeCurl(
         http_proxy: `http://${ip}`,
         https_proxy: `http://${ip}`,
       },
+      detached: false,
     });
     let data = "";
     let error = "";
-    childProcess.stdout.on("data", chunk => {
+    
+    const cleanup = () => {
+      if (!childProcess.killed) {
+        childProcess.kill();
+      }
+    };
+
+    childProcess.stdout?.on("data", chunk => {
       data += chunk.toString();
     });
-    childProcess.stderr.on("data", chunk => {
+    childProcess.stderr?.on("data", chunk => {
       error += chunk.toString();
     });
 
     childProcess.on("close", code => {
-      if (code === null) {
-        reject(error);
+      cleanup();
+      if (code === null || code !== 0) {
+        reject(error || `Process exited with code ${code}`);
       } else {
         resolve(data);
       }
+    });
+
+    childProcess.on("error", err => {
+      cleanup();
+      reject(err);
     });
   });
 }
@@ -294,22 +361,36 @@ async function executeFile(
         http_proxy: `http://${ip}`,
         https_proxy: `http://${ip}`,
       },
+      detached: false,
     });
     let data = "";
     let error = "";
-    childProcess.stdout.on("data", chunk => {
+    
+    const cleanup = () => {
+      if (!childProcess.killed) {
+        childProcess.kill();
+      }
+    };
+
+    childProcess.stdout?.on("data", chunk => {
       data += chunk.toString();
     });
-    childProcess.stderr.on("data", chunk => {
+    childProcess.stderr?.on("data", chunk => {
       error += chunk.toString();
     });
 
     childProcess.on("close", code => {
-      if (code === null) {
-        reject(error);
+      cleanup();
+      if (code === null || code !== 0) {
+        reject(error || `Process exited with code ${code}`);
       } else {
         resolve(data);
       }
+    });
+
+    childProcess.on("error", err => {
+      cleanup();
+      reject(err);
     });
   });
 }

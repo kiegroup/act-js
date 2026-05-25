@@ -1,6 +1,7 @@
 import net from "net";
 import express from "express";
-import { http } from "follow-redirects";
+import http from "http";
+import https from "https";
 import { Server } from "http";
 import { ResponseMocker } from "@kie/mock-github";
 import { networkInterfaces } from "os";
@@ -175,12 +176,15 @@ export class ForwardProxy {
     // forward the intercepted api call
     this.app.all("/*", (req, res) => {
       let path = req.path;
+      let targetUrl: URL;
 
       // for http connections initiated via CONNECT, req.url resolves to be the path and not the entire url
       try {
-        path += new URL(req.url).search;
-      } catch (err) {
-        path += new URL(`http://${req.hostname}${req.url}`).search;
+        targetUrl = new URL(req.url);
+        path += targetUrl.search;
+      } catch {
+        targetUrl = new URL(`http://${req.hostname}${req.url}`);
+        path += targetUrl.search;
       }
       
       const opts = {
@@ -193,7 +197,9 @@ export class ForwardProxy {
 
       this.logger(JSON.stringify(opts));
 
-      const request = http.request(opts);
+      // Use the protocol from the target URL
+      const protocol = targetUrl.protocol === "https:" ? https : http;
+      const request = protocol.request(opts);
 
       request.on("response", response => {
         // set status code

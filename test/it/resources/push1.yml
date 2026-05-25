@@ -6,11 +6,11 @@ jobs:
     steps:
       - run: echo "push 1"
       - name: secrets
-        run: echo $TEST1
+        run: echo secrets
         env:
           TEST1: ${{secrets.SECRET1}}
       - name: env
-        run: echo $ENV1
+        run: echo some env
       - name: pass
         run: echo "pass"
       - name: fail
