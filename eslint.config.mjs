@@ -1,4 +1,3 @@
-import { defineConfig, globalIgnores } from "eslint/config";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import path from "node:path";
@@ -14,50 +13,57 @@ const compat = new FlatCompat({
     allConfig: js.configs.all
 });
 
-export default defineConfig([globalIgnores([
-    "**/node_modules/",
-    "**/build/",
-    "**/bin/",
-    "**/coverage/",
-    "**/scripts/",
-    "**/jest.config.ts",
-]), {
-    extends: compat.extends("eslint:recommended", "plugin:@typescript-eslint/recommended"),
-
-    plugins: {
-        "@typescript-eslint": typescriptEslint,
+export default [
+    // Global ignores
+    {
+        ignores: [
+            "**/node_modules/",
+            "**/build/",
+            "**/bin/",
+            "**/coverage/",
+            "**/scripts/",
+            "**/jest.config.ts",
+        ]
     },
-
-    languageOptions: {
-        parser: tsParser,
-        ecmaVersion: 5,
-        sourceType: "script",
-
-        parserOptions: {
-            project: ["./tsconfig.json"],
+    // Main configuration
+    ...compat.extends("eslint:recommended", "plugin:@typescript-eslint/recommended"),
+    {
+        files: ["**/*.ts", "**/*.tsx"],
+        plugins: {
+            "@typescript-eslint": typescriptEslint,
         },
-    },
 
-    rules: {
-        quotes: ["error", "double"],
-        semi: ["error", "always"],
+        languageOptions: {
+            parser: tsParser,
+            ecmaVersion: "latest",
+            sourceType: "module",
 
-        "@typescript-eslint/no-explicit-any": ["error", {
-            fixToUnknown: true,
-        }],
+            parserOptions: {
+                project: ["./tsconfig.json"],
+            },
+        },
 
-        curly: "error",
-        "no-empty": "error",
-        "no-alert": "error",
-        "@typescript-eslint/no-non-null-assertion": "off",
-        "no-unused-vars": "off",
+        rules: {
+            quotes: ["error", "double"],
+            semi: ["error", "always"],
 
-        "@typescript-eslint/no-unused-vars": ["warn", {
-            varsIgnorePattern: "^_",
-            argsIgnorePattern: "^_",
-        }],
+            "@typescript-eslint/no-explicit-any": ["error", {
+                fixToUnknown: true,
+            }],
 
-        "no-fallthrough": "off",
-        "arrow-parens": ["error", "as-needed"],
-    },
-}]);
+            curly: "error",
+            "no-empty": "error",
+            "no-alert": "error",
+            "@typescript-eslint/no-non-null-assertion": "off",
+            "no-unused-vars": "off",
+
+            "@typescript-eslint/no-unused-vars": ["warn", {
+                varsIgnorePattern: "^_",
+                argsIgnorePattern: "^_",
+            }],
+
+            "no-fallthrough": "off",
+            "arrow-parens": ["error", "as-needed"],
+        },
+    }
+];

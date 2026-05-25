@@ -30,7 +30,7 @@
     "nektos/act"
   ],
   "scripts": {
-    "postinstall": "node scripts/postinstall.js 0.2.61",
+    "postinstall": "node scripts/postinstall.js 0.2.81",
     "build": "tsc && tsc-alias",
     "pretest:it": "npm run postinstall && mkdir -p bin && cp build/bin/* bin/",
     "test": "npm run test:unit && npm run test:it",
@@ -48,7 +48,7 @@
   "author": "Shubh Bapna <sbapna@redhat.com>",
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^8.0.0",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
     "@octokit/rest": "^21.0.0",
