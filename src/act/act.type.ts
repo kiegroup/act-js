@@ -13,6 +13,7 @@ export type Step = {
   name: string;
   status: number;
   output: string;
+  outputs: Record<string, string>;
   groups?: Group[];
 };
 
