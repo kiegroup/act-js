@@ -68,7 +68,7 @@
   },
   "dependencies": {
     "@kie/mock-github": "^2.0.0",
-    "adm-zip": "^0.5.10",
+    "adm-zip": "^0.6.0",
     "ajv": "^8.12.0",
     "bin-links": "^4.0.1",
     "express": "^4.18.1",
