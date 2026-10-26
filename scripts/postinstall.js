@@ -116,7 +116,7 @@ const downloadWindows = async (url, binName, binDir) => {
       .on("error", (err) => {
         console.log("Error: ", err.message);
         reject(
-          "Unable to install act. Set ACT_BINARY enn variable to point to the path of your locally installed act"
+          "Unable to install act CLI. Set ACT_BINARY environment variable to point to the path of your locally installed act."
         );
       });
   });
@@ -135,7 +135,7 @@ const downloadOthers = async (url, binName, binDir) => {
     })
     .on("error", (err) => {
       console.log("Error: ", err.message);
-      throw "Unable to install act. Set ACT_BINARY enn variable to point to the path of your locally installed act";
+      throw "Unable to install act CLI. Set ACT_BINARY environment variable to point to the path of your locally installed act.";
     });
 
   await new Promise((resolve, reject) => {
@@ -179,7 +179,7 @@ async function main() {
   });
 
   // TODO: verify checksums
-  console.info("Installed act CLI successfully");
+  console.info("Installed act CLI successfully.");
 }
 
 main();
