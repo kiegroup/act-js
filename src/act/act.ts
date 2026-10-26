@@ -235,19 +235,16 @@ export class Act {
   ) {
     if (opts?.mockSteps) {
       // there could multiple workflow files with same event triggers or job names. Act executes them all
-      let workflowFiles: string[] = [];
       const cwd = opts.cwd ?? this.cwd;
 
       // if workflow file was defined then no need to consider all possible options
-      if (opts.workflowFile) {
-        workflowFiles = [path.basename(opts.workflowFile)];
-      } else if (this.workflowFile !== cwd) {
-        workflowFiles = [path.basename(this.workflowFile)];
-      } else {
-        workflowFiles = (
-          await this.list(undefined, opts.cwd)
-        ).filter(filter).map(l => l.workflowFile);
-      }
+      const workflowFiles: string[] = opts.workflowFile
+        ? [path.basename(opts.workflowFile)]
+        : this.workflowFile !== cwd
+          ? [path.basename(this.workflowFile)]
+          : (await this.list(undefined, opts.cwd))
+              .filter(filter)
+              .map(l => l.workflowFile);
 
       return Promise.all(
         workflowFiles.map(workflowFile => {

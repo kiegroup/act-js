@@ -1,4 +1,15 @@
 #!/usr/bin/env sh
+# Exit immediately if any command fails
+set -e
+
+# Source husky configuration
 . "$(dirname -- "$0")/_/husky.sh"
 
-npm run lint-staged
+# Run lint-staged with error handling
+echo "Running lint-staged..."
+if ! npm run lint-staged; then
+    echo "❌ Lint-staged failed. Please fix the issues before committing."
+    exit 1
+fi
+
+echo "✅ Pre-commit checks passed successfully!"
